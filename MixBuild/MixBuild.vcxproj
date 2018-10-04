@@ -22,7 +22,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{7D91BD30-72C2-4167-BA14-EBBC02DA533A}</ProjectGuid>
     <RootNamespace>MixBuild</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -84,7 +84,12 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>D:\OpenCV\install\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>D:\OpenCV\install\x64\vc15\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_aruco343d.lib;opencv_bgsegm343d.lib;opencv_bioinspired343d.lib;opencv_calib3d343d.lib;opencv_ccalib343d.lib;opencv_core343d.lib;opencv_datasets343d.lib;opencv_dnn343d.lib;opencv_dnn_objdetect343d.lib;opencv_dpm343d.lib;opencv_face343d.lib;opencv_features2d343d.lib;opencv_flann343d.lib;opencv_fuzzy343d.lib;opencv_hfs343d.lib;opencv_highgui343d.lib;opencv_imgcodecs343d.lib;opencv_imgproc343d.lib;opencv_img_hash343d.lib;opencv_line_descriptor343d.lib;opencv_ml343d.lib;opencv_objdetect343d.lib;opencv_optflow343d.lib;opencv_phase_unwrapping343d.lib;opencv_photo343d.lib;opencv_plot343d.lib;opencv_reg343d.lib;opencv_rgbd343d.lib;opencv_saliency343d.lib;opencv_shape343d.lib;opencv_stereo343d.lib;opencv_stitching343d.lib;opencv_structured_light343d.lib;opencv_superres343d.lib;opencv_surface_matching343d.lib;opencv_text343d.lib;opencv_tracking343d.lib;opencv_video343d.lib;opencv_videoio343d.lib;opencv_videostab343d.lib;opencv_viz343d.lib;opencv_xfeatures2d343d.lib;opencv_ximgproc343d.lib;opencv_xobjdetect343d.lib;opencv_xphoto343d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -108,13 +113,38 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>D:\OpenCV\install\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>D:\OpenCV\install\x64\vc15\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_aruco343.lib;opencv_bgsegm343.lib;opencv_bioinspired343.lib;opencv_calib3d343.lib;opencv_ccalib343.lib;opencv_core343.lib;opencv_datasets343.lib;opencv_dnn343.lib;opencv_dnn_objdetect343.lib;opencv_dpm343.lib;opencv_face343.lib;opencv_features2d343.lib;opencv_flann343.lib;opencv_fuzzy343.lib;opencv_hfs343.lib;opencv_highgui343.lib;opencv_imgcodecs343.lib;opencv_imgproc343.lib;opencv_img_hash343.lib;opencv_line_descriptor343.lib;opencv_ml343.lib;opencv_objdetect343.lib;opencv_optflow343.lib;opencv_phase_unwrapping343.lib;opencv_photo343.lib;opencv_plot343.lib;opencv_reg343.lib;opencv_rgbd343.lib;opencv_saliency343.lib;opencv_shape343.lib;opencv_stereo343.lib;opencv_stitching343.lib;opencv_structured_light343.lib;opencv_superres343.lib;opencv_surface_matching343.lib;opencv_text343.lib;opencv_tracking343.lib;opencv_video343.lib;opencv_videoio343.lib;opencv_videostab343.lib;opencv_viz343.lib;opencv_xfeatures2d343.lib;opencv_ximgproc343.lib;opencv_xobjdetect343.lib;opencv_xphoto343.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="imgs\templeSR0001.png" />
+    <Image Include="imgs\templeSR0002.png" />
+    <Image Include="imgs\templeSR0003.png" />
+    <Image Include="imgs\templeSR0004.png" />
+    <Image Include="imgs\templeSR0005.png" />
+    <Image Include="imgs\templeSR0006.png" />
+    <Image Include="imgs\templeSR0007.png" />
+    <Image Include="imgs\templeSR0008.png" />
+    <Image Include="imgs\templeSR0009.png" />
+    <Image Include="imgs\templeSR0010.png" />
+    <Image Include="imgs\templeSR0011.png" />
+    <Image Include="imgs\templeSR0012.png" />
+    <Image Include="imgs\templeSR0013.png" />
+    <Image Include="imgs\templeSR0014.png" />
+    <Image Include="imgs\templeSR0015.png" />
+    <Image Include="imgs\templeSR0016.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="sfm.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
