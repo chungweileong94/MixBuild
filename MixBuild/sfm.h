@@ -82,24 +82,25 @@ namespace sfm
 	void get_matched_points(
 		vector<KeyPoint>& key_points_query,
 		vector<KeyPoint>& key_points_train,
-		vector<DMatch> matches,
-		vector<Point2f> out_p1,
-		vector<Point2f> out_p2
+		vector<DMatch>& matches,
+		vector<Point2f>& out_p1,
+		vector<Point2f>& out_p2
 	)
 	{
 		for (auto i = 0; i < matches.size(); i++)
 		{
 			out_p1.push_back(key_points_query[matches[i].queryIdx].pt);
-			out_p2.push_back(key_points_query[matches[i].trainIdx].pt);
+			out_p2.push_back(key_points_train[matches[i].trainIdx].pt);
 		}
 	}
 
+	// get matched points colors
 	void get_matched_colors(
 		vector<Vec3b>& colors_query,
 		vector<Vec3b>& colors_train,
-		vector<DMatch> matches,
-		vector<Vec3b> out_colors1,
-		vector<Vec3b> out_colors2
+		vector<DMatch>& matches,
+		vector<Vec3b>& out_colors1,
+		vector<Vec3b>& out_colors2
 	)
 	{
 		for (auto i = 0; i < matches.size(); i++)
@@ -131,6 +132,7 @@ namespace sfm
 		return true;
 	}
 
+	// mask out points
 	void maskout_points(vector<Point2f>& pts, Mat& mask)
 	{
 		vector<Point2f> pts_new;
@@ -146,6 +148,7 @@ namespace sfm
 		pts = pts_new;
 	}
 
+	// mask out colors
 	void maskout_colors(vector<Vec3b>& colors, Mat& mask)
 	{
 		vector<Vec3b> colors_new;
@@ -202,13 +205,68 @@ namespace sfm
 		}
 	}
 
+	void get_objpoints_and_imgpoints(
+		vector<DMatch>& matches,
+		vector<int>& struct_indices,
+		vector<Point3f>& structure,
+		vector<KeyPoint>& key_points,
+		vector<Point3f>& out_object_points,
+		vector<Point2f>& out_image_points
+	)
+	{
+		out_object_points.clear();
+		out_image_points.clear();
+
+		for (auto i = 0; i < matches.size(); ++i)
+		{
+			int query_idx = matches[i].queryIdx;
+			int train_idx = matches[i].trainIdx;
+
+			int struct_idx = struct_indices[query_idx];
+			if (struct_idx < 0) continue;
+
+			out_object_points.push_back(structure[struct_idx]);
+			out_image_points.push_back(key_points[train_idx].pt);
+		}
+	}
+
+	// combine structures
+	void merge_structure(
+		vector<DMatch>& matches,
+		vector<int>& struct_indices,
+		vector<int>& next_struct_indices,
+		vector<Point3f>& structure,
+		vector<Point3f>& next_structure,
+		vector<Vec3b>& colors,
+		vector<Vec3b>& next_colors
+	)
+	{
+		for (size_t i = 0; i < matches.size(); ++i)
+		{
+			int query_idx = matches[i].queryIdx;
+			int train_idx = matches[i].trainIdx;
+
+			int struct_idx = struct_indices[query_idx];
+			// if the point already existed
+			if (struct_idx >= 0)
+			{
+				next_struct_indices[train_idx] = struct_idx;
+				continue;
+			}
+
+			structure.push_back(next_structure[i]);
+			colors.push_back(next_colors[i]);
+			struct_indices[query_idx] = next_struct_indices[train_idx] = structure.size() - 1;
+		}
+	}
+
 	void init_structure(
 		Mat K,
 		vector<vector<KeyPoint>>& key_points_all,
 		vector<vector<Vec3b>>& colors_all,
 		vector<vector<DMatch>>& matches_all,
 		vector<Point3f>& out_structure,
-		vector<vector<int>> out_correspond_struct_idx,
+		vector<vector<int>>& out_correspond_struct_idx,
 		vector<Vec3b>& out_colors,
 		vector<Mat>& out_rotations,
 		vector<Mat>& out_translations
@@ -221,7 +279,7 @@ namespace sfm
 		// filter out un-match feature points & colors
 		get_matched_points(key_points_all[0], key_points_all[1], matches_all[0], p1, p2);
 		get_matched_colors(colors_all[0], colors_all[1], matches_all[0], out_colors, c2);
-		
+
 		// find R & T
 		find_transform(K, p1, p2, R, T, mask);
 
