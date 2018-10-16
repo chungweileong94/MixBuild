@@ -1,119 +1,58 @@
-﻿#include "sfm.h"
+﻿#include <opencv2/opencv.hpp>
 #include <opencv2/viz.hpp>
+#include "rc.h"
 
 using namespace std;
+using namespace cv;
 
 int main()
 {
 	vector<String> image_names;
-	glob("./custom/", image_names);
-	vector<vector<KeyPoint>> key_points_all;
-	vector<Mat> descriptor_all;
-	vector<vector<Vec3b>> colors_all;
+	glob("./imgs/", image_names);
+
+	auto size = imread(image_names[0]).size();
+
+	vector<rc::Contours> contours_collection;
+	vector<rc::Corners> corners_collection;
+	rc::PointCloud point_cloud;
+	rc::extract_contours(image_names, contours_collection);
+	rc::extract_corners(image_names, corners_collection);
 
 	for (auto i = 0; i < image_names.size(); i++)
 	{
-		cout << image_names[i] << endl;
+		auto contours = contours_collection[i];
+		auto corners = corners_collection[i];
+		rc::PointCloud pc;
+		rc::map_corners_to_point_cloud(corners, size.width, size.height, pc);
+
+		rc::rotate_y_axis(pc, 45 * (i + 1));
+		rc::merge_point_cloud(pc, point_cloud);
+
+		Mat img_detected = Mat::zeros(size, CV_8UC3);
+		/*for (auto i = 0; i < contours.size(); i++)
+		{
+			auto color = Scalar(255, 255, 255);
+			drawContours(img_contours, contours, i, color, 2);
+		}*/
+
+		/*for (auto i = 0; i < corners.size(); i++)
+		{
+			auto color = Scalar(0, 255, 0);
+			circle(img_detected, corners[i], 4, color, 4, FILLED);
+		}*/
+
+		/*resize(img_detected, img_detected, img_detected.size() / 2);
+		imshow(image_names[i], img_detected);*/
 	}
 
-	sfm::extract_features(image_names, key_points_all, descriptor_all, colors_all);
+	viz::Viz3d window("Coordinate Frame");
+	viz::WCloud cloud_widget(point_cloud);
+	cloud_widget.setRenderingProperty(viz::POINT_SIZE, 3);
+	window.showWidget("plc", cloud_widget);
 
-	for (auto i = 0; i < key_points_all.size(); i++)
-	{
-		cout << "key point" << i << ": " << key_points_all[i].size() << endl;
-		cout << "color" << i << ": " << colors_all[i].size() << endl;
-	}
+	window.spin();
 
-	// perform feature points matching
-	vector<vector<DMatch>> matches_all;
-	matches_all.clear();
-	for (auto i = 0; i < key_points_all.size() - 1; i++)
-	{
-		vector<DMatch> matches;
-		sfm::match_features(descriptor_all[i], descriptor_all[i + 1], matches);
-		matches_all.push_back(matches);
-	}
+	waitKey();
 
-	auto img = imread(image_names[0], IMREAD_COLOR);
-
-	int focal = 800;
-	Matx33d K(
-		focal, 0, img.cols / 2,
-		0, focal, img.rows / 2,
-		0, 0, 1);
-	Mat mat_k = Mat(K);
-
-	cout << mat_k << endl;
-
-	vector<Point3f> structure;
-	vector<vector<int>> correspond_struct_idx;
-	vector<Vec3b> colors;
-	vector<Mat> rotations, translations;
-
-	sfm::init_structure(
-		mat_k,
-		key_points_all,
-		colors_all,
-		matches_all,
-		structure,
-		correspond_struct_idx,
-		colors,
-		rotations,
-		translations);
-
-	for (auto i = 1; i < matches_all.size(); ++i)
-	{
-		vector<Point3f> object_points;
-		vector<Point2f> image_points;
-		Mat r, R, T;
-
-		sfm::get_objpoints_and_imgpoints(
-			matches_all[i],
-			correspond_struct_idx[i],
-			structure,
-			key_points_all[i + 1],
-			object_points,
-			image_points
-		);
-
-		// if the matched points is less than 4, to prevent error occur in solvePnPRansac 
-		if (object_points.size() < 4) continue;
-
-		solvePnPRansac(object_points, image_points, K, noArray(), r, T);
-		Rodrigues(r, R);
-		rotations.push_back(R);
-		translations.push_back(T);
-
-		vector<Point2f> p1, p2;
-		vector<Vec3b> colors1, colors2;
-		sfm::get_matched_points(key_points_all[i], key_points_all[i + 1], matches_all[i], p1, p2);
-		sfm::get_matched_colors(colors_all[i], colors_all[i + 1], matches_all[i], colors1, colors2);
-
-		vector<Point3f> next_structure;
-		sfm::reconstruct(mat_k, rotations[i], translations[i], R, T, p1, p2, next_structure);
-
-		sfm::merge_structure(
-			matches_all[i],
-			correspond_struct_idx[i],
-			correspond_struct_idx[i + 1],
-			structure,
-			next_structure,
-			colors,
-			colors1);
-	}
-
-	/*for (auto i = 0; i < structure.size(); i++)
-	{
-
-	}*/
-
-	cv::viz::Viz3d visualizeWindow("3D");
-
-	cv::viz::WCloud cloud = cv::viz::WCloud(structure, colors);
-	cloud.setRenderingProperty(viz::POINT_SIZE, 2);
-
-	visualizeWindow.showWidget("CLOUD", cloud);
-
-	visualizeWindow.spin();
 	return 0;
 }

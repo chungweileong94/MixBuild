@@ -144,7 +144,7 @@
     <Image Include="imgs\templeSR0016.png" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="sfm.h" />
+    <ClInclude Include="rc.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

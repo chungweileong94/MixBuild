@@ -70,7 +70,7 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="sfm.h">
+    <ClInclude Include="rc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
