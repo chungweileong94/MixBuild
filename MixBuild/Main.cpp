@@ -7,28 +7,49 @@ using namespace cv;
 
 int main()
 {
-	vector<String> image_names;
-	glob("./imgs/", image_names);
+	rc::ImageSet image_set;
+	rc::extract_image_set("./imgs/", image_set);
 
-	auto size = imread(image_names[0]).size();
+	auto size = imread(image_set[0]).size();
 
-	vector<rc::Contours> contours_collection;
-	vector<rc::Corners> corners_collection;
+	rc::CornersSet corners_set;
 	rc::PointCloud point_cloud;
-	rc::extract_contours(image_names, contours_collection);
-	rc::extract_corners(image_names, corners_collection);
+	rc::extract_corners(image_set, corners_set);
 
-	for (auto i = 0; i < image_names.size(); i++)
+	// 90 - 360
+	for (auto i = 0; i < 360; i += 90)
 	{
-		auto contours = contours_collection[i];
-		auto corners = corners_collection[i];
+		int ref_left = i - 90 < 0 ? i - 90 + 360 : i - 90;
+		int ref_right = i + 90 >= 360 ? i + 90 - 360 : i + 90;
+
+		auto corners = corners_set[i];
+		auto corners_ref1 = corners_set[ref_left];
+		auto corners_ref2 = corners_set[ref_right];
+		auto depth = (rc::get_corners_width(corners_ref1) + rc::get_corners_width(corners_ref2)) / 2 / 2;
+
 		rc::PointCloud pc;
-		rc::map_corners_to_point_cloud(corners, size.width, size.height, pc);
+		rc::map_corners_to_point_cloud(corners, size.width, size.height, depth, pc);
 
-		rc::rotate_y_axis(pc, 45 * (i + 1));
+		rc::rotate_y_axis(pc, -45 * i);
 		rc::merge_point_cloud(pc, point_cloud);
+	}
 
-		Mat img_detected = Mat::zeros(size, CV_8UC3);
+	viz::Viz3d window("Coordinate Frame");
+	viz::WCloud cloud_widget(point_cloud);
+	cloud_widget.setRenderingProperty(viz::POINT_SIZE, 2);
+	window.showWidget("plc", cloud_widget);
+
+	window.spin();
+
+	waitKey();
+
+	return 0;
+}
+
+
+
+
+//Mat img_detected = Mat::zeros(size, CV_8UC3);
 		/*for (auto i = 0; i < contours.size(); i++)
 		{
 			auto color = Scalar(255, 255, 255);
@@ -43,16 +64,3 @@ int main()
 
 		/*resize(img_detected, img_detected, img_detected.size() / 2);
 		imshow(image_names[i], img_detected);*/
-	}
-
-	viz::Viz3d window("Coordinate Frame");
-	viz::WCloud cloud_widget(point_cloud);
-	cloud_widget.setRenderingProperty(viz::POINT_SIZE, 3);
-	window.showWidget("plc", cloud_widget);
-
-	window.spin();
-
-	waitKey();
-
-	return 0;
-}

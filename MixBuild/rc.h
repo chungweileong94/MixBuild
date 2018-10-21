@@ -4,23 +4,50 @@
 
 #include <opencv2/opencv.hpp>
 #include <cmath>
+#include <algorithm>
 
 using namespace std;
 using namespace cv;
 
 namespace rc
 {
+	typedef map<int, String> ImageSet;
+
+	typedef vector<Point2f> Corners;
+	typedef map<int, Corners> CornersSet;
+
 	typedef vector<Point> Contour;
 	typedef vector<Contour> Contours;
-	typedef vector<Point2f> Corners;
+	typedef map<int, Contours> ContoursSet;
+
 	typedef vector<Point3f> PointCloud;
 
-	// extract contours (feature points)
-	void extract_contours(const vector<String>& image_names, vector<Contours>& out_contours_collection)
+
+	// extract the image with correpond degree value from a directory
+	void extract_image_set(const String& dir, ImageSet& out_image_set)
 	{
+		vector<String> image_names;
+		glob(dir, image_names);
+
 		for (auto i = 0; i < image_names.size(); i++)
 		{
-			auto img_gray = imread(image_names[i], IMREAD_GRAYSCALE);
+			auto image_name = image_names[i];
+
+			// the file name should be like 0045.jpg, etc.
+			auto start_idx = image_name.find_last_of("\\") + 1;
+			auto deg_string = image_names[i].substr(start_idx, 4);
+			int degree = stoi(deg_string);
+
+			out_image_set[degree] = image_name;
+		}
+	}
+
+	// extract contours (feature points)
+	void extract_contours(const ImageSet& image_set, ContoursSet& out_contours_set)
+	{
+		for (auto const &img : image_set)
+		{
+			auto img_gray = imread(img.second, IMREAD_GRAYSCALE);
 
 			Mat img_detected;
 			// pre-process image before canny edge detect
@@ -30,20 +57,20 @@ namespace rc
 			// retrieve contours
 			Contours contours;
 			findContours(img_detected, contours, RETR_TREE, CHAIN_APPROX_SIMPLE);
-			out_contours_collection.push_back(contours);
+			out_contours_set[img.first] = contours;
 		}
 	}
 
 	// extract corner (feature points)
-	void extract_corners(const vector<String>& image_names, vector<Corners>& out_corners_collection)
+	void extract_corners(const ImageSet& image_set, CornersSet& out_corners_set)
 	{
-		for (auto i = 0; i < image_names.size(); i++)
+		for (auto const &img : image_set)
 		{
-			auto img_gray = imread(image_names[i], IMREAD_GRAYSCALE);
+			auto img_gray = imread(img.second, IMREAD_GRAYSCALE);
 
 			Corners corners;
 			goodFeaturesToTrack(img_gray, corners, 300, 0.01, 10);
-			out_corners_collection.push_back(corners);
+			out_corners_set[img.first] = corners;
 		}
 	}
 
@@ -54,9 +81,9 @@ namespace rc
 
 		// Y-axis rotation matrix
 		Mat R = (Mat_<float>(4, 4) <<
-			cos(beta), 0, sin(beta), 0,
+			cos(beta), 0, -sin(beta), 0,
 			0, 1, 0, 0,
-			-sin(beta), 0, cos(beta), 0,
+			sin(beta), 0, cos(beta), 0,
 			0, 0, 0, 1);
 
 		// perform rotation to the point cloud
@@ -83,12 +110,25 @@ namespace rc
 	}
 
 	// map corners into point cloud
-	void map_corners_to_point_cloud(vector<Point2f>& corners, float width, float height, PointCloud& out_point_cloud)
+	void map_corners_to_point_cloud(Corners& corners, float width, float height, float depth, PointCloud& out_point_cloud)
 	{
 		for (auto i = 0; i < corners.size(); i++)
 		{
-			out_point_cloud.push_back(Point3f(corners[i].x - width / 2, corners[i].y - height / 2, 1));
+			out_point_cloud.push_back(Point3f(corners[i].x - width / 2, corners[i].y - height / 2, depth));
 		}
+	}
+
+	bool less_by_x(const Point2f& pt_1, const Point2f& pt_2)
+	{
+		return pt_1.x < pt_2.x;
+	}
+
+	float get_corners_width(const Corners& corners)
+	{
+		auto result = std::minmax_element(corners.begin(), corners.end(), less_by_x);
+		float min = corners[result.first - corners.begin()].x;
+		float max = corners[result.second - corners.begin()].x;
+		return std::abs(max - min);
 	}
 }
 
