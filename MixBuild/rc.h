@@ -20,6 +20,9 @@ namespace rc
 	typedef vector<Contour> Contours;
 	typedef map<int, Contours> ContoursSet;
 
+	typedef Mat Shape;
+	typedef map<int, Shape> ShapeSet;
+
 	typedef vector<Point3f> PointCloud;
 
 
@@ -58,6 +61,35 @@ namespace rc
 			Contours contours;
 			findContours(img_detected, contours, RETR_TREE, CHAIN_APPROX_SIMPLE);
 			out_contours_set[img.first] = contours;
+		}
+	}
+
+	// extract object shape
+	void extract_shape(ImageSet& image_set, ShapeSet& out_shape_set)
+	{
+		// extract contours
+		ContoursSet contours_set;
+		extract_contours(image_set, contours_set);
+
+		for (auto const &contours : contours_set)
+		{
+			// detect shape outline
+			auto size = imread(image_set[contours.first]).size();
+			Mat shape_outline = Mat::zeros(size, CV_8UC3);
+
+			for (auto i = 0; i < contours.second.size(); i++)
+			{
+				drawContours(shape_outline, contours.second, i, Scalar::all(255), 1, LINE_AA);
+			}
+
+			// compute the shape fill
+			Mat shape_fill = shape_outline.clone();
+			floodFill(shape_fill, Point(0, 0), Scalar::all(255));
+			bitwise_not(shape_fill, shape_fill);
+
+			// merge fill and outline
+			Mat shape = (shape_outline | shape_fill);
+			out_shape_set[contours.first] = shape;
 		}
 	}
 
