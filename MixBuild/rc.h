@@ -11,7 +11,7 @@ using namespace cv;
 
 namespace rc
 {
-	typedef map<int, String> ImageSet;
+	typedef map<int, String> ImageSrcSet;
 
 	typedef vector<Point2f> Corners;
 	typedef map<int, Corners> CornersSet;
@@ -27,7 +27,7 @@ namespace rc
 
 
 	// extract the image with correpond degree value from a directory
-	void extract_image_set(const String& dir, ImageSet& out_image_set)
+	void extract_image_src_set(const String& dir, ImageSrcSet& out_image_src_set)
 	{
 		vector<String> image_names;
 		glob(dir, image_names);
@@ -41,14 +41,14 @@ namespace rc
 			auto deg_string = image_names[i].substr(start_idx, 4);
 			int degree = stoi(deg_string);
 
-			out_image_set[degree] = image_name;
+			out_image_src_set[degree] = image_name;
 		}
 	}
 
 	// extract contours (feature points)
-	void extract_contours(const ImageSet& image_set, ContoursSet& out_contours_set)
+	void extract_contours(const ImageSrcSet& image_src_set, ContoursSet& out_contours_set)
 	{
-		for (auto const &img : image_set)
+		for (auto const &img : image_src_set)
 		{
 			auto img_gray = imread(img.second, IMREAD_GRAYSCALE);
 
@@ -65,16 +65,16 @@ namespace rc
 	}
 
 	// extract object shape
-	void extract_shape(ImageSet& image_set, ShapeSet& out_shape_set)
+	void extract_shape(const ImageSrcSet& image_src_set, ShapeSet& out_shape_set)
 	{
 		// extract contours
 		ContoursSet contours_set;
-		extract_contours(image_set, contours_set);
+		extract_contours(image_src_set, contours_set);
 
 		for (auto const &contours : contours_set)
 		{
 			// detect shape outline
-			auto size = imread(image_set[contours.first]).size();
+			auto size = imread(image_src_set.at(contours.first)).size();
 			Mat shape_outline = Mat::zeros(size, CV_8UC3);
 
 			for (auto i = 0; i < contours.second.size(); i++)
@@ -94,9 +94,9 @@ namespace rc
 	}
 
 	// extract corner (feature points)
-	void extract_corners(const ImageSet& image_set, CornersSet& out_corners_set)
+	void extract_corners(const ImageSrcSet& image_src_set, CornersSet& out_corners_set)
 	{
-		for (auto const &img : image_set)
+		for (auto const &img : image_src_set)
 		{
 			auto img_gray = imread(img.second, IMREAD_GRAYSCALE);
 
