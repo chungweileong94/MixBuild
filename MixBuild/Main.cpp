@@ -7,37 +7,51 @@ using namespace cv;
 
 int main()
 {
-	rc::ImageSet image_set;
-	rc::extract_image_set("./imgs/", image_set);
+	rc::ImageSrcSet image_src_set;
+	rc::extract_image_src_set("./imgs/sample1", image_src_set);
 
-	auto size = imread(image_set[0]).size();
+	rc::ShapeSet shape_set;
+	rc::extract_shape(image_src_set, shape_set);
 
-	rc::CornersSet corners_set;
+	rc::OthProjection oth_proj;
+	rc::create_othogonal_projection(shape_set, oth_proj);
+
+	//imshow("front", oth_proj.front);
+	//imshow("left", oth_proj.left);
+	//imshow("top", oth_proj.top);
+
 	rc::PointCloud point_cloud;
-	rc::extract_corners(image_set, corners_set);
-
-	// 90 - 360
-	for (auto i = 0; i < 360; i += 90)
-	{
-		int ref_left = i - 90 < 0 ? i - 90 + 360 : i - 90;
-		int ref_right = i + 90 >= 360 ? i + 90 - 360 : i + 90;
-
-		auto corners = corners_set[i];
-		auto corners_ref1 = corners_set[ref_left];
-		auto corners_ref2 = corners_set[ref_right];
-		auto depth = (rc::get_corners_width(corners_ref1) + rc::get_corners_width(corners_ref2)) / 2 / 2;
-
-		rc::PointCloud pc;
-		rc::map_corners_to_point_cloud(corners, size.width, size.height, depth, pc);
-
-		rc::rotate_y_axis(pc, -45 * i);
-		rc::merge_point_cloud(pc, point_cloud);
-	}
+	rc::calculate_point_cloud(oth_proj, point_cloud, 10);
 
 	viz::Viz3d window("Coordinate Frame");
 	viz::WCloud cloud_widget(point_cloud);
 	cloud_widget.setRenderingProperty(viz::POINT_SIZE, 2);
 	window.showWidget("plc", cloud_widget);
+
+
+	// show guideline point
+	auto size = oth_proj.front.size();
+	rc::PointCloud ddd_guide_point{
+		Point3f(0, 0, 0),
+		Point3f(-size.width / 2, 0, -size.height / 2),
+		Point3f(size.width / 2, 0, -size.height / 2),
+		Point3f(-size.width / 2, 0, size.height / 2),
+		Point3f(size.width / 2, 0, size.height / 2),
+	};
+	viz::WCloud ddd_guide(ddd_guide_point, viz::Color::lime());
+	ddd_guide.setRenderingProperty(viz::POINT_SIZE, 5);
+	window.showWidget("ddd", ddd_guide);
+
+	rc::PointCloud dd_guide_point{
+		Point3f(0, 0, 0),
+		Point3f(0, 0, size.height),
+		Point3f(size.width, 0, 0),
+		Point3f(size.width, 0, size.height),
+		Point3f(size.width / 2, 0, size.height / 2),
+	};
+	viz::WCloud dd_guide(dd_guide_point, viz::Color::red());
+	dd_guide.setRenderingProperty(viz::POINT_SIZE, 5);
+	window.showWidget("dd", dd_guide);
 
 	window.spin();
 
@@ -45,22 +59,3 @@ int main()
 
 	return 0;
 }
-
-
-
-
-//Mat img_detected = Mat::zeros(size, CV_8UC3);
-		/*for (auto i = 0; i < contours.size(); i++)
-		{
-			auto color = Scalar(255, 255, 255);
-			drawContours(img_contours, contours, i, color, 2);
-		}*/
-
-		/*for (auto i = 0; i < corners.size(); i++)
-		{
-			auto color = Scalar(0, 255, 0);
-			circle(img_detected, corners[i], 4, color, 4, FILLED);
-		}*/
-
-		/*resize(img_detected, img_detected, img_detected.size() / 2);
-		imshow(image_names[i], img_detected);*/
