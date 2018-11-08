@@ -222,56 +222,6 @@ namespace rc
 			point_cloud[i] = Point3f(result.at<float>(0, 0), result.at<float>(1, 0), result.at<float>(2, 0));
 		}
 	}
-
-
-
-
-	/// Remove these codes 
-	/*
-	typedef vector<Point2f> Corners;
-	typedef map<int, Corners> CornersSet;
-
-	// extract corner (feature points)
-	void extract_corners(const ImageSrcSet& image_src_set, CornersSet& out_corners_set)
-	{
-		for (auto const &img : image_src_set)
-		{
-			auto img_gray = imread(img.second, IMREAD_GRAYSCALE);
-
-			Corners corners;
-			goodFeaturesToTrack(img_gray, corners, 300, 0.01, 10);
-			out_corners_set[img.first] = corners;
-		}
-	}
-
-	// merge two cloud point
-	void merge_point_cloud(PointCloud& point_cloud_new, PointCloud& out_point_cloud)
-	{
-		out_point_cloud.insert(out_point_cloud.end(), point_cloud_new.begin(), point_cloud_new.end());
-	}
-
-	// map corners into point cloud
-	void map_corners_to_point_cloud(Corners& corners, float width, float height, float depth, PointCloud& out_point_cloud)
-	{
-		for (auto i = 0; i < corners.size(); i++)
-		{
-			out_point_cloud.push_back(Point3f(corners[i].x - width / 2, corners[i].y - height / 2, depth));
-		}
-	}
-
-	bool less_by_x(const Point2f& pt_1, const Point2f& pt_2)
-	{
-		return pt_1.x < pt_2.x;
-	}
-
-	float get_corners_width(const Corners& corners)
-	{
-		auto result = std::minmax_element(corners.begin(), corners.end(), less_by_x);
-		float min = corners[result.first - corners.begin()].x;
-		float max = corners[result.second - corners.begin()].x;
-		return std::abs(max - min);
-	}
-	*/
 }
 
 #endif // !RC_H

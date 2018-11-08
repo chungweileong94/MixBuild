@@ -16,9 +16,9 @@ int main()
 	rc::OthProjection oth_proj;
 	rc::create_othogonal_projection(shape_set, oth_proj);
 
-	//imshow("front", oth_proj.front);
-	//imshow("left", oth_proj.left);
-	//imshow("top", oth_proj.top);
+	imshow("front", oth_proj.front);
+	imshow("left", oth_proj.left);
+	imshow("top", oth_proj.top);
 
 	rc::PointCloud point_cloud;
 	rc::calculate_point_cloud(oth_proj, point_cloud, 10);
