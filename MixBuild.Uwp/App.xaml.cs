@@ -109,7 +109,7 @@ namespace MixBuild.Uwp
             view.TitleBar.ButtonBackgroundColor = Colors.Transparent;
             view.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
             view.TitleBar.ButtonForegroundColor = App.Current.RequestedTheme == ApplicationTheme.Dark ? Colors.White : Colors.Black;
-            view.SetPreferredMinSize(new Size(500, 400));
+            view.SetPreferredMinSize(new Size(500, 500));
         }
     }
 }
