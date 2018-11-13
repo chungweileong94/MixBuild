@@ -12,7 +12,7 @@
     <Grid>
         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
             <StackPanel x:Name="LogoPanel" Loaded="LogoPanel_Loaded">
-                <toolkit:DropShadowPanel BlurRadius="100">
+                <toolkit:DropShadowPanel BlurRadius="100" Color="{ThemeResource SystemChromeBlackMediumLowColor}">
                     <Image Source="/Assets/Logo.png" MaxHeight="300" MaxWidth="300" Margin="0"/>
                 </toolkit:DropShadowPanel>
                 <TextBlock Text="MixBuild" HorizontalAlignment="Center" Style="{ThemeResource HeaderTextBlockStyle}"/>
