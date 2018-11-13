@@ -1,6 +1,5 @@
 ﻿using MixBuild.Uwp.Views;
 using System;
-using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
@@ -74,7 +73,7 @@ namespace MixBuild.Uwp
                 }
                 // Ensure the current window is active
                 Window.Current.Activate();
-                await WindowSetupAsync();
+                WindowSetup();
             }
         }
 
@@ -102,7 +101,7 @@ namespace MixBuild.Uwp
             deferral.Complete();
         }
 
-        private async Task WindowSetupAsync()
+        private void WindowSetup()
         {
             var view = Windows.UI.ViewManagement.ApplicationView.GetForCurrentView();
 

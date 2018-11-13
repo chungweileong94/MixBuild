@@ -1,0 +1,39 @@
+﻿<UserControl
+    x:Class="MixBuild.Uwp.Controls.ImageImportControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:MixBuild.Uwp.Controls"
+    xmlns:toolkits="using:Microsoft.Toolkit.Uwp.UI.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    d:DesignHeight="400"
+    d:DesignWidth="500">
+
+    <toolkits:DropShadowPanel BlurRadius="30" Color="{ThemeResource SystemChromeBlackMediumLowColor}">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="VisualStateGroup">
+                <VisualState x:Name="VisualStateWide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="600"/>
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="VisualStateNarrow">
+                    <VisualState.Setters>
+                        <Setter Target="grid.(FrameworkElement.Width)" Value="400"/>
+                        <Setter Target="grid.(FrameworkElement.Height)" Value="300"/>
+                    </VisualState.Setters>
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0"/>
+                    </VisualState.StateTriggers>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <Grid x:Name="grid" 
+            Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
+            Width="500" 
+            Height="400">
+            <SymbolIcon Symbol="Camera" Width="100" Height="100"/>
+        </Grid>
+    </toolkits:DropShadowPanel>
+</UserControl>

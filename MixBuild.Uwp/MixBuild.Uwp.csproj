@@ -95,6 +95,12 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\ImageImportControl.xaml.cs">
+      <DependentUpon>ImageImportControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Models\ImageData.cs" />
+    <Compile Include="ViewModels\BaseViewModel.cs" />
+    <Compile Include="ViewModels\ImportImageViewModel.cs" />
     <Compile Include="Views\ImportImagePage.xaml.cs">
       <DependentUpon>ImportImagePage.xaml</DependentUpon>
     </Compile>
@@ -165,6 +171,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="Controls\ImageImportControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\ImportImagePage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

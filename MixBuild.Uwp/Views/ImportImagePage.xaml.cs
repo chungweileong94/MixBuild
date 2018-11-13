@@ -1,4 +1,5 @@
-﻿using Windows.ApplicationModel.Core;
+﻿using MixBuild.Uwp.ViewModels;
+using Windows.ApplicationModel.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
@@ -6,9 +7,13 @@ namespace MixBuild.Uwp.Views
 {
     public sealed partial class ImportImagePage : Page
     {
+        public ImportImageViewModel ViewModel { get; set; }
+
         public ImportImagePage()
         {
             this.InitializeComponent();
+            ViewModel = new ImportImageViewModel();
+
             BackButton.Click += (s, e) =>
             {
                 Frame rootFrame = Window.Current.Content as Frame;

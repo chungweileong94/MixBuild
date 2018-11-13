@@ -11,7 +11,7 @@
 
     <Grid>
         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-            <StackPanel x:Name="LogoPanel">
+            <StackPanel x:Name="LogoPanel" Loaded="LogoPanel_Loaded">
                 <toolkit:DropShadowPanel BlurRadius="100">
                     <Image Source="/Assets/Logo.png" MaxHeight="300" MaxWidth="300" Margin="0"/>
                 </toolkit:DropShadowPanel>
@@ -26,12 +26,14 @@
                 HorizontalAlignment="Center"
                 Style="{ThemeResource ButtonRevealStyle}"
                 PointerEntered="GetStartedButton_PointerEntered"
-                PointerExited="GetStartedButton_PointerExited">
+                PointerExited="GetStartedButton_PointerExited"
+                Loaded="GetStartedButton_Loaded"
+                Click="GetStartedButton_Click">
                 <SymbolIcon Symbol="Forward"/>
             </Button>
         </StackPanel>
 
         <!--title bar draggable region-->
-        <Grid x:Name="AppTitleBar" Background="Transparent" VerticalAlignment="Top"/>
+        <Border x:Name="AppTitleBar" Background="Transparent" VerticalAlignment="Top"/>
     </Grid>
 </Page>
