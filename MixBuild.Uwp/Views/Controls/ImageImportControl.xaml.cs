@@ -22,10 +22,7 @@ namespace MixBuild.Uwp.Views.Controls
     {
         public object Convert(object value, Type targetType, object parameter, string language) => !(bool)value;
 
-        public object ConvertBack(object value, Type targetType, object parameter, string language)
-        {
-            throw new NotImplementedException();
-        }
+        public object ConvertBack(object value, Type targetType, object parameter, string language) => throw new NotImplementedException();
     }
 
     public class ObjectVisibilityConverter : IValueConverter
@@ -35,10 +32,17 @@ namespace MixBuild.Uwp.Views.Controls
             (parameter == null ? Visibility.Visible : Visibility.Collapsed) :
             (parameter == null ? Visibility.Collapsed : Visibility.Visible);
 
-        public object ConvertBack(object value, Type targetType, object parameter, string language)
-        {
-            throw new NotImplementedException();
-        }
+        public object ConvertBack(object value, Type targetType, object parameter, string language) => throw new NotImplementedException();
+    }
+
+    public class ObjectOpacityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language) =>
+            value != null ?
+            (parameter == null ? 1.0 : 0) :
+            (parameter == null ? 0 : 1.0);
+
+        public object ConvertBack(object value, Type targetType, object parameter, string language) => throw new NotImplementedException();
     }
     #endregion
 }
