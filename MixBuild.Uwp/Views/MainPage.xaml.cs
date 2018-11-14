@@ -8,13 +8,13 @@ namespace MixBuild.Uwp.Views
 {
     public sealed partial class MainPage : Page
     {
-        Compositor _compositor;
-        SpringVector3NaturalMotionAnimation _springAnimation;
+        Compositor _Compositor;
+        SpringVector3NaturalMotionAnimation _SpringAnimation;
 
         public MainPage()
         {
             this.InitializeComponent();
-            _compositor = Window.Current.Compositor;
+            _Compositor = Window.Current.Compositor;
 
             //remove titlebar
             var coreTitleBar = CoreApplication.GetCurrentView().TitleBar;
@@ -28,7 +28,7 @@ namespace MixBuild.Uwp.Views
 
         private void LogoPanel_Loaded(object sender, RoutedEventArgs e)
         {
-            var expressionAnim = _compositor.CreateExpressionAnimation();
+            var expressionAnim = _Compositor.CreateExpressionAnimation();
             expressionAnim.Expression = "Lerp(0, -50, (scaleElement.Scale.Y - 1) * 2)";
             expressionAnim.Target = "Translation.Y";
 
@@ -38,7 +38,7 @@ namespace MixBuild.Uwp.Views
 
         private void GetStartedButton_Loaded(object sender, RoutedEventArgs e)
         {
-            Button button = sender as Button;
+            var button = sender as Button;
             button.CenterPoint = new Vector3((float)button.ActualWidth / 2, (float)button.ActualHeight / 2, 0);
         }
 
@@ -47,23 +47,23 @@ namespace MixBuild.Uwp.Views
         private void GetStartedButton_PointerEntered(object sender, Windows.UI.Xaml.Input.PointerRoutedEventArgs e)
         {
             CreateOrUpdateSpringAnimation(1.5f);
-            (sender as UIElement).StartAnimation(_springAnimation);
+            (sender as UIElement).StartAnimation(_SpringAnimation);
         }
 
         private void GetStartedButton_PointerExited(object sender, Windows.UI.Xaml.Input.PointerRoutedEventArgs e)
         {
             CreateOrUpdateSpringAnimation(1.0f);
-            (sender as UIElement).StartAnimation(_springAnimation);
+            (sender as UIElement).StartAnimation(_SpringAnimation);
         }
 
         private void CreateOrUpdateSpringAnimation(float finalValue)
         {
-            if (_springAnimation == null)
+            if (_SpringAnimation == null)
             {
-                _springAnimation = _compositor.CreateSpringVector3Animation();
-                _springAnimation.Target = "Scale";
+                _SpringAnimation = _Compositor.CreateSpringVector3Animation();
+                _SpringAnimation.Target = "Scale";
             }
-            _springAnimation.FinalValue = new Vector3(finalValue);
+            _SpringAnimation.FinalValue = new Vector3(finalValue);
         }
     }
 }

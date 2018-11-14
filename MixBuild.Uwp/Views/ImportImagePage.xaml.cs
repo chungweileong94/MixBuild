@@ -1,4 +1,6 @@
 ﻿using MixBuild.Uwp.ViewModels;
+using System;
+using Windows.ApplicationModel;
 using Windows.ApplicationModel.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -7,12 +9,11 @@ namespace MixBuild.Uwp.Views
 {
     public sealed partial class ImportImagePage : Page
     {
-        public ImportImageViewModel ViewModel { get; set; }
+        public ImportImageViewModel ViewModel => new ImportImageViewModel();
 
         public ImportImagePage()
         {
             this.InitializeComponent();
-            ViewModel = new ImportImageViewModel();
 
             BackButton.Click += (s, e) =>
             {
@@ -26,6 +27,11 @@ namespace MixBuild.Uwp.Views
             coreTitleBar.LayoutMetricsChanged += (s, args) => AppTitleBar.Height = coreTitleBar.Height;
 
             Window.Current.SetTitleBar(AppTitleBar);
+        }
+
+        private async void ProceedButton_Click(object sender, RoutedEventArgs e)
+        {
+            await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
         }
     }
 }

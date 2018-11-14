@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:MixBuild.Uwp.Views"
     xmlns:models="using:MixBuild.Uwp.Models"
-    xmlns:controls="using:MixBuild.Uwp.Controls"
+    xmlns:controls="using:MixBuild.Uwp.Views.Controls"
     xmlns:toolkits="using:Microsoft.Toolkit.Uwp.UI.Controls"
     xmlns:animations="using:Microsoft.Toolkit.Uwp.UI.Animations"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -20,8 +20,6 @@
         </TransitionCollection>
     </Page.Transitions>
 
-
-
     <Grid>
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="VisualStateGroup">
@@ -32,8 +30,8 @@
                 </VisualState>
                 <VisualState x:Name="VisualStateNarrow">
                     <VisualState.Setters>
-                        <Setter Target="button.(FrameworkElement.HorizontalAlignment)" Value="Center"/>
-                        <Setter Target="button.(FrameworkElement.Width)" Value="200"/>
+                        <Setter Target="ProceedButton.(FrameworkElement.HorizontalAlignment)" Value="Center"/>
+                        <Setter Target="ProceedButton.(FrameworkElement.Width)" Value="200"/>
                     </VisualState.Setters>
                     <VisualState.StateTriggers>
                         <AdaptiveTrigger MinWindowWidth="0"/>
@@ -54,7 +52,7 @@
                 x:Name="ImageGridView" 
                 SelectionMode="None"
                 animations:ReorderGridAnimation.Duration="700"
-                ItemsSource="{x:Bind ViewModel.ImageCollection, Mode=OneWay}">
+                ItemsSource="{x:Bind ViewModel.ImageCollection}">
 
                 <GridView.ItemContainerStyle>
                     <Style TargetType="GridViewItem">
@@ -64,27 +62,34 @@
 
                 <GridView.ItemTemplate>
                     <DataTemplate x:DataType="models:ImageData">
-                        <controls:ImageImportControl/>
+                        <!--DataContext="{x:Bind} is to fix the error for the x:Bind in the user control-->
+                        <controls:ImageImportControl DataContext="{x:Bind}"/>
                     </DataTemplate>
                 </GridView.ItemTemplate>
             </GridView>
 
-            <Button x:Name="button" 
-                IsEnabled="True"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Bottom" 
-                Margin="24"
-                CornerRadius="25"
-                Height="48"
-                Foreground="White"
-                BorderBrush="{ThemeResource SystemControlBackgroundAccentRevealBorderBrush}"
-                Background="{ThemeResource SystemAccentColor}">
+            <toolkits:DropShadowPanel BlurRadius="20" Color="{ThemeResource SystemChromeBlackMediumLowColor}" VerticalAlignment="Bottom" HorizontalContentAlignment="Stretch">
+                <Grid Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" HorizontalAlignment="Stretch">
+                    <Button 
+                        x:Name="ProceedButton" 
+                        IsEnabled="False"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom" 
+                        Margin="24, 12"
+                        CornerRadius="25"
+                        Height="48"
+                        Foreground="{ThemeResource SystemControlForegroundChromeWhiteBrush}"
+                        BorderBrush="{ThemeResource SystemControlBackgroundAccentRevealBorderBrush}"
+                        Background="{ThemeResource SystemControlBackgroundAccentBrush}"
+                        Click="ProceedButton_Click">
 
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Proceed" FontSize="18" Margin="8,0"/>
-                    <SymbolIcon Symbol="Forward" Margin="8,0"/>
-                </StackPanel>
-            </Button>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Proceed" FontSize="18" Margin="8,0"/>
+                            <SymbolIcon Symbol="Forward" Margin="8,0"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </toolkits:DropShadowPanel>
         </Grid>
 
         <Button x:Name="BackButton" Style="{ThemeResource NavigationBackButtonNormalStyle}"/>

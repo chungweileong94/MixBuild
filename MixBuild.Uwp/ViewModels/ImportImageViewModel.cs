@@ -1,5 +1,6 @@
 ﻿using MixBuild.Uwp.Models;
 using System.Collections.ObjectModel;
+using static MixBuild.Uwp.Models.ImageData;
 
 namespace MixBuild.Uwp.ViewModels
 {
@@ -11,11 +12,11 @@ namespace MixBuild.Uwp.ViewModels
         {
             ImageCollection = new ObservableCollection<ImageData>
             {
-                new ImageData { Label = "Front" },
-                new ImageData { Label = "Back" },
-                new ImageData { Label = "Left" },
-                new ImageData { Label = "Right" },
-                new ImageData { Label = "Top" }
+                new ImageData(Faces.Front),
+                new ImageData(Faces.Back),
+                new ImageData(Faces.Left),
+                new ImageData(Faces.Right),
+                new ImageData(Faces.Top)
             };
         }
     }
