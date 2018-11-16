@@ -56,7 +56,8 @@ namespace rc
 
 			// the file name should be like 0045.jpg, etc.
 			auto start_idx = image_name.find_last_of("\\") + 1;
-			auto deg_string = image_names[i].substr(start_idx, 4);
+			auto count = image_name.find_last_of(".") - start_idx;
+			auto deg_string = image_names[i].substr(start_idx, count);
 			int degree = stoi(deg_string);
 
 			out_image_src_set[degree] = image_name;
@@ -158,7 +159,7 @@ namespace rc
 		rotate_point_cloud_y_axis(init_point_cloud, -90);
 		convert_point_cloud_origin_form(init_point_cloud, PointCloudOriginForm::_2D, image_size);
 
-		//// finalize point cloud
+		// finalize point cloud
 		for (const auto point : init_point_cloud)
 		{
 			auto left_pixel = othogonal_projection.left.at<Vec3b>(point.y, point.x);
