@@ -1,4 +1,5 @@
-﻿#include <opencv2/opencv.hpp>
+﻿#include <Windows.h>
+#include <opencv2/opencv.hpp>
 #include <opencv2/viz.hpp>
 #include "rc.h"
 
@@ -7,6 +8,7 @@ using namespace cv;
 
 int main()
 {
+	//FreeConsole();
 	rc::ImageSrcSet image_src_set;
 	rc::extract_image_src_set("./imgs/sample1", image_src_set);
 
@@ -16,18 +18,14 @@ int main()
 	rc::OthProjection oth_proj;
 	rc::create_othogonal_projection(shape_set, oth_proj);
 
-	imshow("front", oth_proj.front);
-	imshow("left", oth_proj.left);
-	imshow("top", oth_proj.top);
-
 	rc::PointCloud point_cloud;
-	rc::calculate_point_cloud(oth_proj, point_cloud, 10);
+	int cube_size = 5;
+	rc::calculate_point_cloud(oth_proj, point_cloud, cube_size);
 
 	viz::Viz3d window("Coordinate Frame");
 	viz::WCloud cloud_widget(point_cloud);
 	cloud_widget.setRenderingProperty(viz::POINT_SIZE, 2);
 	window.showWidget("plc", cloud_widget);
-
 
 	// show guideline point
 	auto size = oth_proj.front.size();
@@ -42,7 +40,7 @@ int main()
 	ddd_guide.setRenderingProperty(viz::POINT_SIZE, 5);
 	window.showWidget("ddd", ddd_guide);
 
-	rc::PointCloud dd_guide_point{
+	/*rc::PointCloud dd_guide_point{
 		Point3f(0, 0, 0),
 		Point3f(0, 0, size.height),
 		Point3f(size.width, 0, 0),
@@ -51,7 +49,7 @@ int main()
 	};
 	viz::WCloud dd_guide(dd_guide_point, viz::Color::red());
 	dd_guide.setRenderingProperty(viz::POINT_SIZE, 5);
-	window.showWidget("dd", dd_guide);
+	window.showWidget("dd", dd_guide);*/
 
 	window.spin();
 

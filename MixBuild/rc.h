@@ -26,7 +26,11 @@ namespace rc
 		Shape top;
 	};
 
-	typedef vector<Point3f> PointCloud;
+	typedef vector<Point3d> PointCloud;
+
+	typedef enum PointCloudOriginForm { _2D, _3D };
+
+	typedef vector<vector<vector<bool>>> Volume;
 
 
 	void extract_image_src_set(const String& dir, ImageSrcSet& out_image_src_set);
@@ -34,8 +38,10 @@ namespace rc
 	void extract_shape(const ImageSrcSet& image_src_set, ShapeSet& out_shape_set);
 	void create_othogonal_projection(const ShapeSet& shape_set, OthProjection& out_othogonal_Projection);
 	void calculate_point_cloud(const OthProjection& othogonal_projection, PointCloud& out_point_cloud, const int cube_size);
+	void optimize_point_cloud(const PointCloud& point_cloud, PointCloud& out_point_cloud, const int cube_size, const Size image_size);
+	void convert_point_cloud_origin_form(PointCloud& point_cloud, const PointCloudOriginForm origin_form, const Size image_size);
 	void rotate_point_cloud_y_axis(PointCloud& point_cloud, float degree);
-	void transform_point_cloud(PointCloud& point_cloud, Point3f distance);
+	void transform_point_cloud(PointCloud& point_cloud, Point3d distance);
 
 
 	// extract the image with correpond degree value from a directory
@@ -126,7 +132,7 @@ namespace rc
 	void calculate_point_cloud(const OthProjection& othogonal_projection, PointCloud& out_point_cloud, const int cube_size = 5)
 	{
 		auto image_size = othogonal_projection.front.size();
-		PointCloud init_point_cloud;
+		PointCloud init_point_cloud, complete_point_cloud;
 
 		// initial point cloud
 		for (auto z = 0; z < image_size.height; z += cube_size)
@@ -148,9 +154,9 @@ namespace rc
 		}
 
 		// rotate to left side (y-axis)
-		transform_point_cloud(init_point_cloud, Point3f(-image_size.width / 2, 0, -image_size.height / 2));
+		convert_point_cloud_origin_form(init_point_cloud, PointCloudOriginForm::_3D, image_size);
 		rotate_point_cloud_y_axis(init_point_cloud, -90);
-		transform_point_cloud(init_point_cloud, Point3f(image_size.width / 2, 0, image_size.height / 2));
+		convert_point_cloud_origin_form(init_point_cloud, PointCloudOriginForm::_2D, image_size);
 
 		//// finalize point cloud
 		for (const auto point : init_point_cloud)
@@ -158,13 +164,126 @@ namespace rc
 			auto left_pixel = othogonal_projection.left.at<Vec3b>(point.y, point.x);
 			if (left_pixel != Vec3b(0, 0, 0))
 			{
-				out_point_cloud.push_back(point);
+				complete_point_cloud.push_back(point);
 			}
 		}
 
-		// adjust the origin cooordinate to 3d form
-		transform_point_cloud(out_point_cloud, Point3f(-image_size.width / 2, -image_size.height / 2, -image_size.height / 2));
+		// optimize point cloud (remove inner point)
+		optimize_point_cloud(complete_point_cloud, out_point_cloud, cube_size, image_size);
+
+		// rotate back
+		convert_point_cloud_origin_form(out_point_cloud, PointCloudOriginForm::_3D, image_size);
 		rotate_point_cloud_y_axis(out_point_cloud, 90);
+	}
+
+	// remove inner point cloud
+	void optimize_point_cloud(const PointCloud& point_cloud, PointCloud& out_point_cloud, const int cube_size, const Size image_size)
+	{
+		// find the model volume size
+		int minX, minY, minZ, maxX, maxY, maxZ;
+		bool initialize = false;
+
+		for (const auto point : point_cloud)
+		{
+			minX = !initialize || point.x < minX ? point.x : minX;
+			minY = !initialize || point.y < minY ? point.y : minY;
+			minZ = !initialize || point.z < minZ ? point.z : minZ;
+
+			maxX = !initialize || point.x > maxX ? point.x : maxX;
+			maxY = !initialize || point.y > maxY ? point.y : maxY;
+			maxZ = !initialize || point.z > maxZ ? point.z : maxZ;
+			initialize = true;
+		}
+
+		// create a model volume
+		Volume volume(image_size.width, vector<vector<bool>>(image_size.height, vector<bool>(image_size.height, false)));
+		for (const auto point : point_cloud)
+		{
+			volume[point.x][point.y][point.z] = true;
+		}
+
+		// retrieve only the surface points
+		/// front & back
+		for (auto x = minX; x <= maxX; x += cube_size)
+		{
+			for (auto y = minY; y <= maxY; y += cube_size)
+			{
+				for (auto z = minZ; z <= maxZ; z += cube_size)
+				{
+					if (volume[x][y][z])
+					{
+						out_point_cloud.push_back(Point3d(x, y, z));
+						break;
+					}
+				}
+				for (auto z = maxZ; z >= minZ; z -= cube_size)
+				{
+					if (volume[x][y][z])
+					{
+						out_point_cloud.push_back(Point3d(x, y, z));
+						break;
+					}
+				}
+			}
+		}
+
+		/// left & right
+		for (auto z = minZ; z <= maxZ; z += cube_size)
+		{
+			for (auto y = minY; y <= maxY; y += cube_size)
+			{
+				for (auto x = minX; x <= maxX; x += cube_size)
+				{
+					if (volume[x][y][z])
+					{
+						out_point_cloud.push_back(Point3d(x, y, z));
+						break;
+					}
+				}
+				for (auto x = maxX; x >= minX; x -= cube_size)
+				{
+					if (volume[x][y][z])
+					{
+						out_point_cloud.push_back(Point3d(x, y, z));
+						break;
+					}
+				}
+			}
+		}
+
+		/// top & bottom
+		for (auto z = minZ; z <= maxZ; z += cube_size)
+		{
+			for (auto x = minX; x <= maxX; x += cube_size)
+			{
+				for (auto y = minY; y <= maxY; y += cube_size)
+				{
+					if (volume[x][y][z])
+					{
+						out_point_cloud.push_back(Point3d(x, y, z));
+						break;
+					}
+				}
+
+				for (auto y = maxY; y >= minY; y -= cube_size)
+				{
+					if (volume[x][y][z])
+					{
+						out_point_cloud.push_back(Point3d(x, y, z));
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	// covert point cloud origin form (2D <-> 3D)
+	void convert_point_cloud_origin_form(PointCloud& point_cloud, const PointCloudOriginForm origin_form, const Size image_size)
+	{
+		int t_x = origin_form == PointCloudOriginForm::_3D ? -image_size.width / 2 : image_size.width / 2;
+		int t_y = origin_form == PointCloudOriginForm::_3D ? -image_size.height / 2 : image_size.height / 2;
+		int t_z = origin_form == PointCloudOriginForm::_3D ? -image_size.height / 2 : image_size.height / 2;
+		transform_point_cloud(point_cloud, Point3d(t_x, t_y, t_z));
 	}
 
 	// point cloud Y-axis rotation
@@ -182,7 +301,7 @@ namespace rc
 		// perform rotation to the point cloud
 		for (auto i = 0; i < point_cloud.size(); i++)
 		{
-			// covert Point3f into Mat
+			// covert Point3d into Mat
 			Mat p_mat = (Mat_<float>(4, 1) <<
 				point_cloud[i].x,
 				point_cloud[i].y,
@@ -192,12 +311,12 @@ namespace rc
 			Mat result = R * p_mat;
 
 			// assign the result back to the point cloud
-			point_cloud[i] = Point3f(result.at<float>(0, 0), result.at<float>(1, 0), result.at<float>(2, 0));
+			point_cloud[i] = Point3d(result.at<float>(0, 0), result.at<float>(1, 0), result.at<float>(2, 0));
 		}
 	}
 
 	// point cloud transform
-	void transform_point_cloud(PointCloud & point_cloud, Point3f distance)
+	void transform_point_cloud(PointCloud & point_cloud, Point3d distance)
 	{
 		// transformation matrix
 		Mat T = (Mat_<float>(4, 4) <<
@@ -209,7 +328,7 @@ namespace rc
 		// perform transformation to the point cloud
 		for (auto i = 0; i < point_cloud.size(); i++)
 		{
-			// covert Point3f into Mat
+			// covert Point3d into Mat
 			Mat p_mat = (Mat_<float>(4, 1) <<
 				point_cloud[i].x,
 				point_cloud[i].y,
@@ -219,7 +338,7 @@ namespace rc
 			Mat result = T * p_mat;
 
 			// assign the result back to the point cloud
-			point_cloud[i] = Point3f(result.at<float>(0, 0), result.at<float>(1, 0), result.at<float>(2, 0));
+			point_cloud[i] = Point3d(result.at<float>(0, 0), result.at<float>(1, 0), result.at<float>(2, 0));
 		}
 	}
 }
