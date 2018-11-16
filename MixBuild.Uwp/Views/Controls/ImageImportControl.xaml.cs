@@ -44,5 +44,15 @@ namespace MixBuild.Uwp.Views.Controls
 
         public object ConvertBack(object value, Type targetType, object parameter, string language) => throw new NotImplementedException();
     }
+
+    public class ImportLabelConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language) =>
+            value != null ?
+            (parameter == null ? "Change" : "Import") :
+            (parameter == null ? "Import" : "Change");
+
+        public object ConvertBack(object value, Type targetType, object parameter, string language) => throw new NotImplementedException();
+    }
     #endregion
 }

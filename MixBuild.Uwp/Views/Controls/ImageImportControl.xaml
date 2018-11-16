@@ -15,6 +15,7 @@
         <local:InvertBooleanConverter x:Name="InvertBooleanConverter"/>
         <local:ObjectVisibilityConverter x:Name="ObjectVisibilityConverter"/>
         <local:ObjectOpacityConverter x:Name="ObjectOpacityConverter"/>
+        <local:ImportLabelConverter x:Name="ImportLabelConverter"/>
     </UserControl.Resources>
 
     <toolkits:DropShadowPanel BlurRadius="5" Color="{ThemeResource SystemChromeBlackMediumLowColor}">
@@ -114,7 +115,7 @@
 
                         <StackPanel Orientation="Horizontal">
                             <SymbolIcon Symbol="Camera" Margin="0,4,8,0"/>
-                            <TextBlock Text="Import" FontWeight="SemiBold"/>
+                            <TextBlock Text="{x:Bind ImageData.File, Mode=OneWay, Converter={StaticResource ImportLabelConverter}}" FontWeight="SemiBold"/>
                         </StackPanel>
                     </Button>
                 </Grid>
