@@ -6,11 +6,16 @@
 using namespace std;
 using namespace cv;
 
-int main()
+int main(int argc, char* argv[])
 {
 	//FreeConsole();
+	if (argc < 1) return -1;
+
+	String image_path(argv[1]);
+
 	rc::ImageSrcSet image_src_set;
-	rc::extract_image_src_set("./imgs/sample1", image_src_set);
+	try { rc::extract_image_src_set(image_path, image_src_set); }
+	catch (const std::exception&) { return -2; }
 
 	rc::ShapeSet shape_set;
 	rc::extract_shape(image_src_set, shape_set);
@@ -19,7 +24,7 @@ int main()
 	rc::create_othogonal_projection(shape_set, oth_proj);
 
 	rc::PointCloud point_cloud;
-	int cube_size = 5;
+	int cube_size = 10;
 	rc::calculate_point_cloud(oth_proj, point_cloud, cube_size);
 
 	viz::Viz3d window("Coordinate Frame");
