@@ -14,9 +14,7 @@
 
     <Page.Transitions>
         <TransitionCollection>
-            <NavigationThemeTransition>
-                <ContinuumNavigationTransitionInfo/>
-            </NavigationThemeTransition>
+            <NavigationThemeTransition/>
         </TransitionCollection>
     </Page.Transitions>
 
@@ -72,7 +70,7 @@
                 <Grid Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" HorizontalAlignment="Stretch">
                     <Button 
                         x:Name="ProceedButton" 
-                        IsEnabled="False"
+                        IsEnabled="{x:Bind ViewModel.IsReady, Mode=OneWay}"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Bottom" 
                         Margin="24, 12"
@@ -81,7 +79,7 @@
                         Foreground="{ThemeResource SystemControlForegroundChromeWhiteBrush}"
                         BorderBrush="{ThemeResource SystemControlBackgroundAccentRevealBorderBrush}"
                         Background="{ThemeResource SystemControlBackgroundAccentBrush}"
-                        Click="ProceedButton_Click">
+                        Command="{x:Bind ViewModel.ProceedReconstructionCommand}">
 
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Proceed" FontSize="18" Margin="8,0"/>

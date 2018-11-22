@@ -28,8 +28,7 @@
       <Extensions>
         <desktop:Extension Category="windows.fullTrustProcess" Executable="Assets\MixBuild.exe">
           <desktop:FullTrustProcess>
-            <desktop:ParameterGroup GroupId="SyncGroup" Parameters="/Sync" />
-            <desktop:ParameterGroup GroupId="OtherGroup" Parameters="/Other" />
+            <desktop:ParameterGroup GroupId="images" Parameters="images" />
           </desktop:FullTrustProcess>
         </desktop:Extension>
       </Extensions>

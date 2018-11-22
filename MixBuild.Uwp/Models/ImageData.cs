@@ -46,12 +46,15 @@ namespace MixBuild.Uwp.Models
             get => _IsLoading;
             set => Set(ref _IsLoading, value);
         }
+
+        public Action BitmapChangedCallback { get; set; }
         #endregion
 
-        public ImageData(Faces face)
+        public ImageData(Faces face, Action bitmapChangedCallback)
         {
             Face = face;
             Bitmap = new BitmapImage();
+            BitmapChangedCallback = bitmapChangedCallback;
         }
 
         public ICommand AddPathCommand => new RelayCommand<RoutedEventArgs>(async (e) => await AddPathAsync());
@@ -70,7 +73,11 @@ namespace MixBuild.Uwp.Models
 
             File = await picker.PickSingleFileAsync();
 
-            if (File != null) await Bitmap.SetSourceAsync(await File.OpenReadAsync());
+            if (File != null)
+            {
+                await Bitmap.SetSourceAsync(await File.OpenReadAsync());
+                BitmapChangedCallback?.Invoke();
+            }
             IsLoading = false;
         }
 

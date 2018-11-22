@@ -1,6 +1,6 @@
 ﻿using MixBuild.Uwp.ViewModels;
+using MixBuild.Uwp.Views.Controls;
 using System;
-using Windows.ApplicationModel;
 using Windows.ApplicationModel.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -15,10 +15,21 @@ namespace MixBuild.Uwp.Views
         {
             this.InitializeComponent();
 
-            BackButton.Click += (s, e) =>
+            BackButton.Click += async (s, e) =>
             {
-                Frame rootFrame = Window.Current.Content as Frame;
-                if (rootFrame.CanGoBack) rootFrame.GoBack();
+                var dialog = new ConfirmationContentDialog
+                {
+                    Title = "Go Back",
+                    Content = "Are you sure to cancel the process?"
+                };
+
+                var dialogResult = await dialog.ShowAsync();
+
+                if (dialogResult == ContentDialogResult.Primary)
+                {
+                    Frame rootFrame = Window.Current.Content as Frame;
+                    if (rootFrame.CanGoBack) rootFrame.GoBack();
+                }
             };
 
             //setup title bar draggable region
@@ -27,11 +38,6 @@ namespace MixBuild.Uwp.Views
             coreTitleBar.LayoutMetricsChanged += (s, args) => AppTitleBar.Height = coreTitleBar.Height;
 
             Window.Current.SetTitleBar(AppTitleBar);
-        }
-
-        private async void ProceedButton_Click(object sender, RoutedEventArgs e)
-        {
-            await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
         }
     }
 }
