@@ -34,14 +34,14 @@ namespace rc
 
 
 	void extract_image_src_set(const String& dir, ImageSrcSet& out_image_src_set);
-	void extract_contours(const ImageSrcSet& image_src_set, ContoursSet& out_contours_set);
 	void extract_shape(const ImageSrcSet& image_src_set, ShapeSet& out_shape_set);
 	void create_othogonal_projection(const ShapeSet& shape_set, OthProjection& out_othogonal_Projection);
 	void calculate_point_cloud(const OthProjection& othogonal_projection, PointCloud& out_point_cloud, const int cube_size);
-	void optimize_point_cloud(const PointCloud& point_cloud, PointCloud& out_point_cloud, const int cube_size, const Size image_size);
-	void convert_point_cloud_origin_form(PointCloud& point_cloud, const PointCloudOriginForm origin_form, const Size image_size);
-	void rotate_point_cloud_y_axis(PointCloud& point_cloud, float degree);
-	void transform_point_cloud(PointCloud& point_cloud, Point3d distance);
+	void __extract_contours(const ImageSrcSet& image_src_set, ContoursSet& out_contours_set);
+	void __optimize_point_cloud(const PointCloud& point_cloud, PointCloud& out_point_cloud, const int cube_size, const Size image_size);
+	void __convert_point_cloud_origin_form(PointCloud& point_cloud, const PointCloudOriginForm origin_form, const Size image_size);
+	void __rotate_point_cloud_y_axis(PointCloud& point_cloud, float degree);
+	void __transform_point_cloud(PointCloud& point_cloud, Point3d distance);
 
 
 	// extract the image with correpond degree value from a directory
@@ -64,31 +64,12 @@ namespace rc
 		}
 	}
 
-	// extract contours (feature points)
-	void extract_contours(const ImageSrcSet& image_src_set, ContoursSet& out_contours_set)
-	{
-		for (auto const &img : image_src_set)
-		{
-			auto img_gray = imread(img.second, IMREAD_GRAYSCALE);
-
-			Mat img_detected;
-			// pre-process image before canny edge detect
-			blur(img_gray, img_detected, Size(3, 3));
-			Canny(img_detected, img_detected, 0, 100);
-
-			// retrieve contours
-			Contours contours;
-			findContours(img_detected, contours, RETR_TREE, CHAIN_APPROX_SIMPLE);
-			out_contours_set[img.first] = contours;
-		}
-	}
-
 	// extract object shape
 	void extract_shape(const ImageSrcSet& image_src_set, ShapeSet& out_shape_set)
 	{
 		// extract contours
 		ContoursSet contours_set;
-		extract_contours(image_src_set, contours_set);
+		__extract_contours(image_src_set, contours_set);
 
 		for (auto const &contours : contours_set)
 		{
@@ -155,9 +136,9 @@ namespace rc
 		}
 
 		// rotate to left side (y-axis)
-		convert_point_cloud_origin_form(init_point_cloud, PointCloudOriginForm::_3D, image_size);
-		rotate_point_cloud_y_axis(init_point_cloud, -90);
-		convert_point_cloud_origin_form(init_point_cloud, PointCloudOriginForm::_2D, image_size);
+		__convert_point_cloud_origin_form(init_point_cloud, PointCloudOriginForm::_3D, image_size);
+		__rotate_point_cloud_y_axis(init_point_cloud, -90);
+		__convert_point_cloud_origin_form(init_point_cloud, PointCloudOriginForm::_2D, image_size);
 
 		// finalize point cloud
 		for (const auto point : init_point_cloud)
@@ -170,15 +151,34 @@ namespace rc
 		}
 
 		// optimize point cloud (remove inner point)
-		optimize_point_cloud(complete_point_cloud, out_point_cloud, cube_size, image_size);
+		__optimize_point_cloud(complete_point_cloud, out_point_cloud, cube_size, image_size);
 
 		// rotate back
-		convert_point_cloud_origin_form(out_point_cloud, PointCloudOriginForm::_3D, image_size);
-		rotate_point_cloud_y_axis(out_point_cloud, 90);
+		__convert_point_cloud_origin_form(out_point_cloud, PointCloudOriginForm::_3D, image_size);
+		__rotate_point_cloud_y_axis(out_point_cloud, 90);
+	}
+
+	// extract contours (feature points)
+	void __extract_contours(const ImageSrcSet& image_src_set, ContoursSet& out_contours_set)
+	{
+		for (auto const &img : image_src_set)
+		{
+			auto img_gray = imread(img.second, IMREAD_GRAYSCALE);
+
+			Mat img_detected;
+			// pre-process image before canny edge detect
+			blur(img_gray, img_detected, Size(3, 3));
+			Canny(img_detected, img_detected, 0, 100);
+
+			// retrieve contours
+			Contours contours;
+			findContours(img_detected, contours, RETR_TREE, CHAIN_APPROX_SIMPLE);
+			out_contours_set[img.first] = contours;
+		}
 	}
 
 	// remove inner point cloud
-	void optimize_point_cloud(const PointCloud& point_cloud, PointCloud& out_point_cloud, const int cube_size, const Size image_size)
+	void __optimize_point_cloud(const PointCloud& point_cloud, PointCloud& out_point_cloud, const int cube_size, const Size image_size)
 	{
 		// find the model volume size
 		int minX, minY, minZ, maxX, maxY, maxZ;
@@ -279,16 +279,16 @@ namespace rc
 	}
 
 	// covert point cloud origin form (2D <-> 3D)
-	void convert_point_cloud_origin_form(PointCloud& point_cloud, const PointCloudOriginForm origin_form, const Size image_size)
+	void __convert_point_cloud_origin_form(PointCloud& point_cloud, const PointCloudOriginForm origin_form, const Size image_size)
 	{
 		int t_x = origin_form == PointCloudOriginForm::_3D ? -image_size.width / 2 : image_size.width / 2;
 		int t_y = origin_form == PointCloudOriginForm::_3D ? -image_size.height / 2 : image_size.height / 2;
 		int t_z = origin_form == PointCloudOriginForm::_3D ? -image_size.height / 2 : image_size.height / 2;
-		transform_point_cloud(point_cloud, Point3d(t_x, t_y, t_z));
+		__transform_point_cloud(point_cloud, Point3d(t_x, t_y, t_z));
 	}
 
 	// point cloud Y-axis rotation
-	void rotate_point_cloud_y_axis(PointCloud& point_cloud, float degree)
+	void __rotate_point_cloud_y_axis(PointCloud& point_cloud, float degree)
 	{
 		float beta = degree * CV_PI / 180;
 
@@ -317,7 +317,7 @@ namespace rc
 	}
 
 	// point cloud transform
-	void transform_point_cloud(PointCloud & point_cloud, Point3d distance)
+	void __transform_point_cloud(PointCloud & point_cloud, Point3d distance)
 	{
 		// transformation matrix
 		Mat T = (Mat_<float>(4, 4) <<
