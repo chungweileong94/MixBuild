@@ -11,6 +11,8 @@ using namespace cv;
 
 namespace rc
 {
+#pragma region type_declaration
+
 	typedef map<int, String> ImageSrcSet;
 
 	typedef vector<Point> Contour;
@@ -32,6 +34,9 @@ namespace rc
 
 	typedef vector<vector<vector<bool>>> Volume;
 
+#pragma endregion
+
+#pragma region methods_declaration
 
 	void extract_image_src_set(const String& dir, ImageSrcSet& out_image_src_set);
 	void extract_shape(const ImageSrcSet& image_src_set, ShapeSet& out_shape_set);
@@ -43,6 +48,9 @@ namespace rc
 	void __rotate_point_cloud_y_axis(PointCloud& point_cloud, float degree);
 	void __transform_point_cloud(PointCloud& point_cloud, Point3d distance);
 
+#pragma endregion
+
+#pragma region methods_definition
 
 	// extract the image with correpond degree value from a directory
 	void extract_image_src_set(const String& dir, ImageSrcSet& out_image_src_set)
@@ -365,6 +373,8 @@ namespace rc
 			point_cloud[i] = Point3d(result.at<float>(0, 0), result.at<float>(1, 0), result.at<float>(2, 0));
 		}
 	}
+
+#pragma endregion
 }
 
 #endif // !RC_H
