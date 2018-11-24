@@ -204,6 +204,8 @@ namespace rc
 		}
 
 		// retrieve only the surface points
+		PointCloud surface_point_cloud;
+
 		/// front & back
 		for (auto x = minX; x <= maxX; x += cube_size)
 		{
@@ -213,7 +215,7 @@ namespace rc
 				{
 					if (volume[x][y][z])
 					{
-						out_point_cloud.push_back(Point3d(x, y, z));
+						surface_point_cloud.push_back(Point3d(x, y, z));
 						break;
 					}
 				}
@@ -221,7 +223,7 @@ namespace rc
 				{
 					if (volume[x][y][z])
 					{
-						out_point_cloud.push_back(Point3d(x, y, z));
+						surface_point_cloud.push_back(Point3d(x, y, z));
 						break;
 					}
 				}
@@ -237,7 +239,7 @@ namespace rc
 				{
 					if (volume[x][y][z])
 					{
-						out_point_cloud.push_back(Point3d(x, y, z));
+						surface_point_cloud.push_back(Point3d(x, y, z));
 						break;
 					}
 				}
@@ -245,7 +247,7 @@ namespace rc
 				{
 					if (volume[x][y][z])
 					{
-						out_point_cloud.push_back(Point3d(x, y, z));
+						surface_point_cloud.push_back(Point3d(x, y, z));
 						break;
 					}
 				}
@@ -261,7 +263,7 @@ namespace rc
 				{
 					if (volume[x][y][z])
 					{
-						out_point_cloud.push_back(Point3d(x, y, z));
+						surface_point_cloud.push_back(Point3d(x, y, z));
 						break;
 					}
 				}
@@ -270,8 +272,29 @@ namespace rc
 				{
 					if (volume[x][y][z])
 					{
-						out_point_cloud.push_back(Point3d(x, y, z));
+						surface_point_cloud.push_back(Point3d(x, y, z));
 						break;
+					}
+				}
+			}
+		}
+
+		// remove redundant points (each surface might have the intercept points)
+		volume = Volume(image_size.width, vector<vector<bool>>(image_size.height, vector<bool>(image_size.height, false)));
+		for (const auto point : surface_point_cloud)
+		{
+			volume[point.x][point.y][point.z] = true;
+		}
+
+		for (auto x = minX; x <= maxX; x += cube_size)
+		{
+			for (auto y = minY; y <= maxY; y += cube_size)
+			{
+				for (auto z = minZ; z <= maxZ; z += cube_size)
+				{
+					if (volume[x][y][z])
+					{
+						out_point_cloud.push_back(Point3d(x, y, z));
 					}
 				}
 			}
