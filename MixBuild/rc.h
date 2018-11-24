@@ -45,6 +45,7 @@ namespace rc
 	void __extract_contours(const ImageSrcSet& image_src_set, ContoursSet& out_contours_set);
 	void __optimize_point_cloud(const PointCloud& point_cloud, PointCloud& out_point_cloud, const int cube_size, const Size image_size);
 	void __convert_point_cloud_origin_form(PointCloud& point_cloud, const PointCloudOriginForm origin_form, const Size image_size);
+	void __rotate_point_cloud_x_axis(PointCloud& point_cloud, float degree);
 	void __rotate_point_cloud_y_axis(PointCloud& point_cloud, float degree);
 	void __transform_point_cloud(PointCloud& point_cloud, Point3d distance);
 
@@ -163,6 +164,7 @@ namespace rc
 
 		// rotate back
 		__convert_point_cloud_origin_form(out_point_cloud, PointCloudOriginForm::_3D, image_size);
+		__rotate_point_cloud_x_axis(out_point_cloud, 180);
 		__rotate_point_cloud_y_axis(out_point_cloud, 90);
 	}
 
@@ -316,6 +318,35 @@ namespace rc
 		int t_y = origin_form == PointCloudOriginForm::_3D ? -image_size.height / 2 : image_size.height / 2;
 		int t_z = origin_form == PointCloudOriginForm::_3D ? -image_size.height / 2 : image_size.height / 2;
 		__transform_point_cloud(point_cloud, Point3d(t_x, t_y, t_z));
+	}
+
+	// point cloud X-axis rotation
+	void __rotate_point_cloud_x_axis(PointCloud& point_cloud, float degree)
+	{
+		float beta = degree * CV_PI / 180;
+
+		// Y-axis rotation matrix
+		Mat R = (Mat_<float>(4, 4) <<
+			1, 0, 0, 0,
+			0, cos(beta), -sin(beta), 0,
+			0, sin(beta), cos(beta), 0,
+			0, 0, 0, 1);
+
+		// perform rotation to the point cloud
+		for (auto i = 0; i < point_cloud.size(); i++)
+		{
+			// covert Point3d into Mat
+			Mat p_mat = (Mat_<float>(4, 1) <<
+				point_cloud[i].x,
+				point_cloud[i].y,
+				point_cloud[i].z,
+				1);
+
+			Mat result = R * p_mat;
+
+			// assign the result back to the point cloud
+			point_cloud[i] = Point3d(result.at<float>(0, 0), result.at<float>(1, 0), result.at<float>(2, 0));
+		}
 	}
 
 	// point cloud Y-axis rotation
