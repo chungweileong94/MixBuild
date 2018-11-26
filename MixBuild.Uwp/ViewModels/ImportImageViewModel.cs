@@ -4,8 +4,8 @@ using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using Windows.ApplicationModel;
 using Windows.Storage;
+using Windows.Storage.Search;
 using Windows.UI.Xaml;
 using static MixBuild.Uwp.Models.ImageData;
 
@@ -20,12 +20,19 @@ namespace MixBuild.Uwp.ViewModels
             get => _IsReady;
             set => Set(ref _IsReady, value);
         }
+        private bool _IsLoading;
+        public bool IsLoading
+        {
+            get => _IsLoading;
+            set => Set(ref _IsLoading, value);
+        }
 
         public ICommand ProceedReconstructionCommand => new RelayCommand<RoutedEventArgs>(async (e) => await ProceedReconstructionAsync());
 
         public ImportImageViewModel()
         {
             IsReady = false;
+            IsLoading = false;
             ImageCollection = new ObservableCollection<ImageData>
             {
                 new ImageData(Faces.Front, BitmapChanged_Callback),
@@ -52,16 +59,30 @@ namespace MixBuild.Uwp.ViewModels
 
         private async Task ProceedReconstructionAsync()
         {
-            var tempFolder = KnownFolders.PicturesLibrary.;
+            IsLoading = true;
+            var outputFolder = await KnownFolders.PicturesLibrary.CreateFolderAsync("MixBuild", CreationCollisionOption.OpenIfExists);
 
-            // copy image to the temp folder
+            // copy image to the output folder
             foreach (var imageData in ImageCollection)
             {
                 var fileName = $"{((int)imageData.Face).ToString()}{imageData.File.FileType}";
-                await imageData.File.CopyAsync(tempFolder, fileName, NameCollisionOption.ReplaceExisting);
+                await imageData.File.CopyAsync(outputFolder, fileName, NameCollisionOption.ReplaceExisting);
             }
 
-            await FullTrustProcessLauncher.LaunchFullTrustProcessForAppAsync();
+            // subscribe to file change
+            var query = outputFolder.CreateFileQueryWithOptions(new QueryOptions { FileTypeFilter = { ".txt" } });
+            query.ContentsChanged += Query_ContentsChanged;
+            await query.GetFilesAsync();
+
+            //await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
+        }
+
+        private async void Query_ContentsChanged(IStorageQueryResultBase sender, object args)
+        {
+            if (await sender.GetItemCountAsync() > 0)
+            {
+                IsLoading = false;
+            }
         }
     }
 }

@@ -12,6 +12,10 @@
     mc:Ignorable="d"
     Background="{ThemeResource SystemControlAcrylicWindowBrush}">
 
+    <Page.Resources>
+        <local:InvertBooleanConverter x:Name="InvertBooleanConverter"/>
+    </Page.Resources>
+
     <Page.Transitions>
         <TransitionCollection>
             <NavigationThemeTransition/>
@@ -90,7 +94,20 @@
             </toolkits:DropShadowPanel>
         </Grid>
 
-        <Button x:Name="BackButton" Style="{ThemeResource NavigationBackButtonNormalStyle}"/>
+        <toolkits:Loading 
+            Grid.RowSpan="2"
+            IsLoading="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+            HorizontalContentAlignment="Center" 
+            VerticalContentAlignment="Center"
+            Background="{ThemeResource SystemControlAcrylicElementMediumHighBrush}">
+
+            <StackPanel Orientation="Horizontal">
+                <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" Width="48" Height="48" Padding="8,0"/>
+                <TextBlock Text="Working on it" Style="{ThemeResource SubheaderTextBlockStyle}" VerticalAlignment="Center" Padding="8,0"/>
+            </StackPanel>
+        </toolkits:Loading>
+
+        <Button x:Name="BackButton" Style="{ThemeResource NavigationBackButtonNormalStyle}" IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource InvertBooleanConverter}}"/>
 
         <!--title bar draggable region-->
         <Border x:Name="AppTitleBar" Background="Transparent" VerticalAlignment="Top" Margin="48,0,0,0"/>
