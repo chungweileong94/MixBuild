@@ -9,7 +9,8 @@
     Title="{x:Bind Title}"
     PrimaryButtonText="{x:Bind PrimaryButtonText}"
     SecondaryButtonText="{x:Bind SecondaryButtonText}"
-    DefaultButton="Primary">
+    DefaultButton="Primary"
+    CornerRadius="10">
 
     <Grid>
         <TextBlock Text="{x:Bind Content}"/>

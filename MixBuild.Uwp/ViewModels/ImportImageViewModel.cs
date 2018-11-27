@@ -1,12 +1,16 @@
 ﻿using MixBuild.Uwp.Helpers;
 using MixBuild.Uwp.Models;
+using MixBuild.Uwp.Views.Controls;
 using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Windows.ApplicationModel.Core;
 using Windows.Storage;
 using Windows.Storage.Search;
+using Windows.UI.Core;
 using Windows.UI.Xaml;
+using Windows.UI.Xaml.Controls;
 using static MixBuild.Uwp.Models.ImageData;
 
 namespace MixBuild.Uwp.ViewModels
@@ -81,7 +85,30 @@ namespace MixBuild.Uwp.ViewModels
         {
             if (await sender.GetItemCountAsync() > 0)
             {
-                IsLoading = false;
+                await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
+                CoreDispatcherPriority.Normal,
+                async () =>
+                {
+                    IsLoading = false;
+
+                    var dialog = new CompleteContentDialog();
+                    var dialogResult = await dialog.ShowAsync();
+
+                    switch (dialogResult)
+                    {
+                        case ContentDialogResult.Primary:
+                            // View
+                            break;
+                        case ContentDialogResult.Secondary:
+                            // Export
+                            break;
+                        default:
+                            // Close
+                            var frame = Window.Current.Content as Frame;
+                            if (frame.CanGoBack) frame.GoBack();
+                            break;
+                    }
+                });
             }
         }
     }

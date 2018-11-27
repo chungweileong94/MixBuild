@@ -96,6 +96,9 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="Helpers\RelayCommand.cs" />
+    <Compile Include="Views\Controls\CompleteContentDialog.xaml.cs">
+      <DependentUpon>CompleteContentDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Controls\ConfirmationContentDialog.xaml.cs">
       <DependentUpon>ConfirmationContentDialog.xaml</DependentUpon>
     </Compile>
@@ -175,6 +178,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="Views\Controls\CompleteContentDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\Controls\ConfirmationContentDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
