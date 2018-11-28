@@ -12,8 +12,9 @@ viewer::Frustum __frustum;
 viewer::WorldTransform __world;
 viewer::TransformController __controller;
 
-rc::PointCloud reconstruct_point_cloud(const String image_path);
+rc::PointCloud reconstruct_point_cloud(const String image_path, rc::PointCloudBoundary& out_boundary);
 void viz_display(rc::PointCloud point_cloud, Size guide_size);
+Point3f map_point_coordinate(Point3d point, Size image_size);
 void render_model(int argc, char** argv, function<void()> draw_callback);
 void __init_perspective_view(int width, int height);
 void __display();
@@ -24,36 +25,37 @@ void __motion(int x, int y);
 int main(int argc, char* argv[])
 {
 	String image_path;
-	//FreeConsole();
-	if (argc > 0)
-	{
-		// only for debug purpose
-		image_path = String(argv[1]);
-	}
-	else
-	{
-		CHAR folder[MAX_PATH];
-		HRESULT result = SHGetFolderPath(NULL, CSIDL_MYPICTURES, NULL, SHGFP_TYPE_CURRENT, folder);
-		image_path = String(String(folder) + "\\MixBuild");
-	}
+	FreeConsole();
+	//if (argc > 0)
+	//{
+	//	// only for debug purpose
+	//	image_path = String(argv[1]);
+	//}
+	//else
+	//{
+	//	CHAR folder[MAX_PATH];
+	//	HRESULT result = SHGetFolderPath(NULL, CSIDL_MYPICTURES, NULL, SHGFP_TYPE_CURRENT, folder);
+	//	image_path = String(String(folder) + "\\MixBuild");
+	//}
 
-	auto point_cloud = reconstruct_point_cloud(image_path);
+	CHAR folder[MAX_PATH];
+	HRESULT result = SHGetFolderPath(NULL, CSIDL_MYPICTURES, NULL, SHGFP_TYPE_CURRENT, folder);
+	image_path = String(String(folder) + "\\MixBuild");
+
+	rc::PointCloudBoundary boundary;
+	auto point_cloud = reconstruct_point_cloud(image_path, boundary);
 	//viz_display(point_cloud, Size(1920, 1080));
 
 	auto draw_callback = [&]()
 	{
-		//glutWireTeapot(1);
-
 		glBegin(GL_POINTS);
+		glPointSize(40);
+		glColor3d(1, 1, 1);
 
 		for (const auto p : point_cloud)
 		{
-			float x = 1920 / 1000 * p.x / 1000;
-			float y = 1080 / 700 * p.y / 700;
-			float z = 1080 / 700 * p.z / 700;
-
-			glPointSize(20);
-			glVertex3f(x, y, z);
+			Point3f mapped_point = map_point_coordinate(p, Size(1920, 1080));
+			glVertex3f(mapped_point.x, mapped_point.y, mapped_point.z);
 		}
 
 		glEnd();
@@ -66,7 +68,7 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-rc::PointCloud reconstruct_point_cloud(const String image_path)
+rc::PointCloud reconstruct_point_cloud(const String image_path, rc::PointCloudBoundary& out_boundary)
 {
 	rc::ImageSrcSet image_src_set;
 	try { rc::extract_image_src_set(image_path, image_src_set); }
@@ -80,7 +82,7 @@ rc::PointCloud reconstruct_point_cloud(const String image_path)
 
 	rc::PointCloud point_cloud;
 	int cube_size = 10;
-	rc::calculate_point_cloud(oth_proj, point_cloud, cube_size);
+	rc::calculate_point_cloud(oth_proj, point_cloud, out_boundary, cube_size);
 
 	return point_cloud;
 }
@@ -118,6 +120,15 @@ void viz_display(rc::PointCloud point_cloud, Size guide_size)
 	window.showWidget("dd", dd_guide);*/
 
 	window.spin();
+}
+
+Point3f map_point_coordinate(Point3d point, Size image_size)
+{
+	return Point3f(
+		image_size.width / __window.width * point.x / __window.width,
+		image_size.height / __window.height * point.y / __window.height,
+		image_size.width / __window.width * point.z / __window.width
+	);
 }
 
 // init opengl
@@ -217,6 +228,11 @@ void __mouse(int button, int state, int x, int y)
 		{
 			__controller.left_mouse_is_pressed = false;
 		}
+		break;
+
+	case 3:
+	case 4:
+		__world.translate(0, 0, button == 3 ? .1 : -.1);
 		break;
 	}
 }

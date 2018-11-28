@@ -5,6 +5,7 @@
 #include <opencv2/opencv.hpp>
 #include <cmath>
 #include <algorithm>
+#include <regex>
 
 using namespace std;
 using namespace cv;
@@ -30,6 +31,11 @@ namespace rc
 
 	typedef vector<Point3d> PointCloud;
 
+	typedef struct PointCloudBoundary
+	{
+		int minX, minY, minZ, maxX, maxY, maxZ;
+	};
+
 	typedef enum PointCloudOriginForm { _2D, _3D };
 
 	typedef vector<vector<vector<bool>>> Volume;
@@ -41,9 +47,10 @@ namespace rc
 	void extract_image_src_set(const String& dir, ImageSrcSet& out_image_src_set);
 	void extract_shape(const ImageSrcSet& image_src_set, ShapeSet& out_shape_set);
 	void create_othogonal_projection(const ShapeSet& shape_set, OthProjection& out_othogonal_Projection);
-	void calculate_point_cloud(const OthProjection& othogonal_projection, PointCloud& out_point_cloud, const int cube_size);
+	void calculate_point_cloud(const OthProjection& othogonal_projection, PointCloud& out_point_cloud, PointCloudBoundary& out_boundary, const int cube_size = 10);
+	void convert_point_cloud_volume(const PointCloud& point_cloud, Volume& out_volume, const Size image_size);
 	void __extract_contours(const ImageSrcSet& image_src_set, ContoursSet& out_contours_set);
-	void __optimize_point_cloud(const PointCloud& point_cloud, PointCloud& out_point_cloud, const int cube_size, const Size image_size);
+	void __optimize_point_cloud(const PointCloud& point_cloud, PointCloud& out_point_cloud, PointCloudBoundary& out_boundary, const int cube_size, const Size image_size);
 	void __convert_point_cloud_origin_form(PointCloud& point_cloud, const PointCloudOriginForm origin_form, const Size image_size);
 	void __rotate_point_cloud_x_axis(PointCloud& point_cloud, float degree);
 	void __rotate_point_cloud_y_axis(PointCloud& point_cloud, float degree);
@@ -65,6 +72,10 @@ namespace rc
 
 			// the file name should be like 0045.jpg, etc.
 			auto start_idx = image_name.find_last_of("\\") + 1;
+
+			regex rx("-?\\w*\\.(jpg|jpeg|png)");
+			if (!regex_match(string(image_name.substr(start_idx)), rx)) break;
+
 			auto count = image_name.find_last_of(".") - start_idx;
 			auto deg_string = image_names[i].substr(start_idx, count);
 			int degree = stoi(deg_string);
@@ -120,7 +131,7 @@ namespace rc
 	}
 
 	// calculate point cloud
-	void calculate_point_cloud(const OthProjection& othogonal_projection, PointCloud& out_point_cloud, const int cube_size = 5)
+	void calculate_point_cloud(const OthProjection& othogonal_projection, PointCloud& out_point_cloud, PointCloudBoundary& out_boundary, const int cube_size)
 	{
 		auto image_size = othogonal_projection.front.size();
 		PointCloud init_point_cloud, complete_point_cloud;
@@ -160,12 +171,22 @@ namespace rc
 		}
 
 		// optimize point cloud (remove inner point)
-		__optimize_point_cloud(complete_point_cloud, out_point_cloud, cube_size, image_size);
+		__optimize_point_cloud(complete_point_cloud, out_point_cloud, out_boundary, cube_size, image_size);
 
 		// rotate back
 		__convert_point_cloud_origin_form(out_point_cloud, PointCloudOriginForm::_3D, image_size);
 		__rotate_point_cloud_x_axis(out_point_cloud, 180);
 		__rotate_point_cloud_y_axis(out_point_cloud, 90);
+	}
+
+	// convert point cloud to volume
+	void convert_point_cloud_volume(const PointCloud& point_cloud, Volume& out_volume, const Size image_size)
+	{
+		out_volume = Volume(image_size.width, vector<vector<bool>>(image_size.height, vector<bool>(image_size.height, false)));
+		for (const auto point : point_cloud)
+		{
+			out_volume[point.x][point.y][point.z] = true;
+		}
 	}
 
 	// extract contours (feature points)
@@ -188,40 +209,36 @@ namespace rc
 	}
 
 	// remove inner point cloud
-	void __optimize_point_cloud(const PointCloud& point_cloud, PointCloud& out_point_cloud, const int cube_size, const Size image_size)
+	void __optimize_point_cloud(const PointCloud& point_cloud, PointCloud& out_point_cloud, PointCloudBoundary& out_boundary, const int cube_size, const Size image_size)
 	{
 		// find the model volume size
-		int minX, minY, minZ, maxX, maxY, maxZ;
 		bool initialize = false;
 
 		for (const auto point : point_cloud)
 		{
-			minX = !initialize || point.x < minX ? point.x : minX;
-			minY = !initialize || point.y < minY ? point.y : minY;
-			minZ = !initialize || point.z < minZ ? point.z : minZ;
+			out_boundary.minX = !initialize || point.x < out_boundary.minX ? point.x : out_boundary.minX;
+			out_boundary.minY = !initialize || point.y < out_boundary.minY ? point.y : out_boundary.minY;
+			out_boundary.minZ = !initialize || point.z < out_boundary.minZ ? point.z : out_boundary.minZ;
 
-			maxX = !initialize || point.x > maxX ? point.x : maxX;
-			maxY = !initialize || point.y > maxY ? point.y : maxY;
-			maxZ = !initialize || point.z > maxZ ? point.z : maxZ;
+			out_boundary.maxX = !initialize || point.x > out_boundary.maxX ? point.x : out_boundary.maxX;
+			out_boundary.maxY = !initialize || point.y > out_boundary.maxY ? point.y : out_boundary.maxY;
+			out_boundary.maxZ = !initialize || point.z > out_boundary.maxZ ? point.z : out_boundary.maxZ;
 			initialize = true;
 		}
 
 		// create a model volume
-		Volume volume(image_size.width, vector<vector<bool>>(image_size.height, vector<bool>(image_size.height, false)));
-		for (const auto point : point_cloud)
-		{
-			volume[point.x][point.y][point.z] = true;
-		}
+		Volume volume;
+		convert_point_cloud_volume(point_cloud, volume, image_size);
 
 		// retrieve only the surface points
 		PointCloud surface_point_cloud;
 
 		/// front & back
-		for (auto x = minX; x <= maxX; x += cube_size)
+		for (auto x = out_boundary.minX; x <= out_boundary.maxX; x += cube_size)
 		{
-			for (auto y = minY; y <= maxY; y += cube_size)
+			for (auto y = out_boundary.minY; y <= out_boundary.maxY; y += cube_size)
 			{
-				for (auto z = minZ; z <= maxZ; z += cube_size)
+				for (auto z = out_boundary.minZ; z <= out_boundary.maxZ; z += cube_size)
 				{
 					if (volume[x][y][z])
 					{
@@ -229,7 +246,7 @@ namespace rc
 						break;
 					}
 				}
-				for (auto z = maxZ; z >= minZ; z -= cube_size)
+				for (auto z = out_boundary.maxZ; z >= out_boundary.minZ; z -= cube_size)
 				{
 					if (volume[x][y][z])
 					{
@@ -241,11 +258,11 @@ namespace rc
 		}
 
 		/// left & right
-		for (auto z = minZ; z <= maxZ; z += cube_size)
+		for (auto z = out_boundary.minZ; z <= out_boundary.maxZ; z += cube_size)
 		{
-			for (auto y = minY; y <= maxY; y += cube_size)
+			for (auto y = out_boundary.minY; y <= out_boundary.maxY; y += cube_size)
 			{
-				for (auto x = minX; x <= maxX; x += cube_size)
+				for (auto x = out_boundary.minX; x <= out_boundary.maxX; x += cube_size)
 				{
 					if (volume[x][y][z])
 					{
@@ -253,7 +270,7 @@ namespace rc
 						break;
 					}
 				}
-				for (auto x = maxX; x >= minX; x -= cube_size)
+				for (auto x = out_boundary.maxX; x >= out_boundary.minX; x -= cube_size)
 				{
 					if (volume[x][y][z])
 					{
@@ -265,11 +282,11 @@ namespace rc
 		}
 
 		/// top & bottom
-		for (auto z = minZ; z <= maxZ; z += cube_size)
+		for (auto z = out_boundary.minZ; z <= out_boundary.maxZ; z += cube_size)
 		{
-			for (auto x = minX; x <= maxX; x += cube_size)
+			for (auto x = out_boundary.minX; x <= out_boundary.maxX; x += cube_size)
 			{
-				for (auto y = minY; y <= maxY; y += cube_size)
+				for (auto y = out_boundary.minY; y <= out_boundary.maxY; y += cube_size)
 				{
 					if (volume[x][y][z])
 					{
@@ -278,7 +295,7 @@ namespace rc
 					}
 				}
 
-				for (auto y = maxY; y >= minY; y -= cube_size)
+				for (auto y = out_boundary.maxY; y >= out_boundary.minY; y -= cube_size)
 				{
 					if (volume[x][y][z])
 					{
@@ -290,17 +307,13 @@ namespace rc
 		}
 
 		// remove redundant points (each surface might have the intercept points)
-		volume = Volume(image_size.width, vector<vector<bool>>(image_size.height, vector<bool>(image_size.height, false)));
-		for (const auto point : surface_point_cloud)
-		{
-			volume[point.x][point.y][point.z] = true;
-		}
+		convert_point_cloud_volume(surface_point_cloud, volume, image_size);
 
-		for (auto x = minX; x <= maxX; x += cube_size)
+		for (auto x = out_boundary.minX; x <= out_boundary.maxX; x += cube_size)
 		{
-			for (auto y = minY; y <= maxY; y += cube_size)
+			for (auto y = out_boundary.minY; y <= out_boundary.maxY; y += cube_size)
 			{
-				for (auto z = minZ; z <= maxZ; z += cube_size)
+				for (auto z = out_boundary.minZ; z <= out_boundary.maxZ; z += cube_size)
 				{
 					if (volume[x][y][z])
 					{
