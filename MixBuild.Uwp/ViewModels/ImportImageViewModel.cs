@@ -1,6 +1,7 @@
 ﻿using MixBuild.Uwp.Helpers;
 using MixBuild.Uwp.Models;
 using MixBuild.Uwp.Views.Controls;
+using Newtonsoft.Json;
 using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
@@ -11,7 +12,6 @@ using Windows.Storage;
 using Windows.Storage.Search;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
 using static MixBuild.Uwp.Models.ImageData;
 
 namespace MixBuild.Uwp.ViewModels
@@ -74,8 +74,12 @@ namespace MixBuild.Uwp.ViewModels
                 await imageData.File.CopyAsync(outputFolder, fileName, NameCollisionOption.ReplaceExisting);
             }
 
+            // create a status file
+            var statusFile = await outputFolder.CreateFileAsync("status.json", CreationCollisionOption.OpenIfExists);
+            await FileIO.WriteTextAsync(statusFile, JsonConvert.SerializeObject(new Status { status = false, path = "" }));
+
             // subscribe to file change
-            var query = outputFolder.CreateFileQueryWithOptions(new QueryOptions { FileTypeFilter = { ".txt" } });
+            var query = outputFolder.CreateFileQueryWithOptions(new QueryOptions { FileTypeFilter = { ".json" } });
             query.ContentsChanged += Query_ContentsChanged;
             await query.GetFilesAsync();
 
@@ -87,26 +91,28 @@ namespace MixBuild.Uwp.ViewModels
             if (await sender.GetItemCountAsync() > 0)
             {
                 await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
-                CoreDispatcherPriority.Normal,
-                async () =>
-                {
-                    IsLoading = false;
-
-                    var dialog = new CompleteContentDialog();
-                    var dialogResult = await dialog.ShowAsync();
-
-                    switch (dialogResult)
+                    CoreDispatcherPriority.Normal,
+                    async () =>
                     {
-                        case ContentDialogResult.Primary:
-                            // Export
-                            break;
-                        default:
-                            // Close
-                            var frame = Window.Current.Content as Frame;
-                            if (frame.CanGoBack) frame.GoBack();
-                            break;
+                        var outputFolder = await KnownFolders.PicturesLibrary.GetFolderAsync("MixBuild");
+                        var statusFile = await outputFolder.GetFileAsync("status.json");
+                        var jsonString = await FileIO.ReadTextAsync(statusFile);
+                        var status = JsonConvert.DeserializeObject<Status>(jsonString);
+
+                        if (status.status)
+                        {
+                            // if the dialog already opened, this will catch the error
+                            try
+                            {
+                                IsLoading = false;
+
+                                var dialog = new CompleteContentDialog(status.path);
+                                var dialogResult = await dialog.ShowAsync();
+                            }
+                            catch { }
+                        }
                     }
-                });
+                );
             }
         }
     }

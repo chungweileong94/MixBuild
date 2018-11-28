@@ -10,6 +10,7 @@
     CloseButtonText="Close"
     DefaultButton="Primary" 
     CornerRadius="10"
+    PrimaryButtonClick="ContentDialog_PrimaryButtonClick"
     CloseButtonClick="ContentDialog_CloseButtonClick"
     Closing="ContentDialog_Closing">
 

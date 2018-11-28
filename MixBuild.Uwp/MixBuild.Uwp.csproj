@@ -96,6 +96,7 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="Helpers\RelayCommand.cs" />
+    <Compile Include="Models\Status.cs" />
     <Compile Include="Views\Controls\CompleteContentDialog.xaml.cs">
       <DependentUpon>CompleteContentDialog.xaml</DependentUpon>
     </Compile>
@@ -216,6 +217,9 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Toolkit.Uwp.UI.Controls">
       <Version>5.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>12.0.1</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
