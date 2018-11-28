@@ -48,7 +48,7 @@ namespace rc
 	void extract_shape(const ImageSrcSet& image_src_set, ShapeSet& out_shape_set);
 	void create_othogonal_projection(const ShapeSet& shape_set, OthProjection& out_othogonal_Projection);
 	void calculate_point_cloud(const OthProjection& othogonal_projection, PointCloud& out_point_cloud, PointCloudBoundary& out_boundary, const int cube_size = 10);
-	void convert_point_cloud_volume(const PointCloud& point_cloud, Volume& out_volume, const Size image_size);
+	void convert_point_cloud_to_volume(const PointCloud& point_cloud, Volume& out_volume, const Size image_size);
 	void __extract_contours(const ImageSrcSet& image_src_set, ContoursSet& out_contours_set);
 	void __optimize_point_cloud(const PointCloud& point_cloud, PointCloud& out_point_cloud, PointCloudBoundary& out_boundary, const int cube_size, const Size image_size);
 	void __convert_point_cloud_origin_form(PointCloud& point_cloud, const PointCloudOriginForm origin_form, const Size image_size);
@@ -180,7 +180,7 @@ namespace rc
 	}
 
 	// convert point cloud to volume
-	void convert_point_cloud_volume(const PointCloud& point_cloud, Volume& out_volume, const Size image_size)
+	void convert_point_cloud_to_volume(const PointCloud& point_cloud, Volume& out_volume, const Size image_size)
 	{
 		out_volume = Volume(image_size.width, vector<vector<bool>>(image_size.height, vector<bool>(image_size.height, false)));
 		for (const auto point : point_cloud)
@@ -228,7 +228,7 @@ namespace rc
 
 		// create a model volume
 		Volume volume;
-		convert_point_cloud_volume(point_cloud, volume, image_size);
+		convert_point_cloud_to_volume(point_cloud, volume, image_size);
 
 		// retrieve only the surface points
 		PointCloud surface_point_cloud;
@@ -307,7 +307,7 @@ namespace rc
 		}
 
 		// remove redundant points (each surface might have the intercept points)
-		convert_point_cloud_volume(surface_point_cloud, volume, image_size);
+		convert_point_cloud_to_volume(surface_point_cloud, volume, image_size);
 
 		for (auto x = out_boundary.minX; x <= out_boundary.maxX; x += cube_size)
 		{
