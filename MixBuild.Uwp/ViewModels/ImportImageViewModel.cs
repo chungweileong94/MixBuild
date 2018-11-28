@@ -5,6 +5,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Windows.ApplicationModel;
 using Windows.ApplicationModel.Core;
 using Windows.Storage;
 using Windows.Storage.Search;
@@ -78,7 +79,7 @@ namespace MixBuild.Uwp.ViewModels
             query.ContentsChanged += Query_ContentsChanged;
             await query.GetFilesAsync();
 
-            //await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
+            await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
         }
 
         private async void Query_ContentsChanged(IStorageQueryResultBase sender, object args)
@@ -97,9 +98,6 @@ namespace MixBuild.Uwp.ViewModels
                     switch (dialogResult)
                     {
                         case ContentDialogResult.Primary:
-                            // View
-                            break;
-                        case ContentDialogResult.Secondary:
                             // Export
                             break;
                         default:

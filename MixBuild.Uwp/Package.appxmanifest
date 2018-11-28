@@ -26,7 +26,7 @@
         <uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="black" />
       </uap:VisualElements>
       <Extensions>
-        <desktop:Extension Category="windows.fullTrustProcess" Executable="Assets\MixBuild.exe">
+        <desktop:Extension Category="windows.fullTrustProcess" Executable="Assets\MB\MixBuild.exe">
           <desktop:FullTrustProcess>
             <desktop:ParameterGroup GroupId="images" Parameters="images" />
           </desktop:FullTrustProcess>
