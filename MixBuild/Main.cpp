@@ -1,7 +1,6 @@
 ﻿#include <Windows.h>
 #include <ShlObj.h>
 #include <GL/glut.h>
-//#include <opencv2/viz.hpp>
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
@@ -19,7 +18,6 @@ viewer::TransformController __controller;
 
 rc::PointCloud reconstruct_point_cloud(const String image_path, rc::PointCloudBoundary& out_boundary);
 void generate_result_status(const bool status, const string result_path, const string output_path);
-//void viz_display(rc::PointCloud point_cloud, Size guide_size);
 Point3f map_point_coordinate(Point3d point, Size image_size);
 void render_model(int argc, char** argv, function<void()> draw_callback);
 void __init_perspective_view(int width, int height);
@@ -50,7 +48,6 @@ int main(int argc, char* argv[])
 
 	rc::PointCloudBoundary boundary;
 	auto point_cloud = reconstruct_point_cloud(image_path, boundary);
-	//viz_display(point_cloud, Size(1920, 1080));
 
 	generate_result_status(true, string(image_path + "\\test.glb"), image_path);
 
@@ -76,6 +73,7 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
+// reconstuct point cloud
 rc::PointCloud reconstruct_point_cloud(const String image_path, rc::PointCloudBoundary& out_boundary)
 {
 	rc::ImageSrcSet image_src_set;
@@ -95,6 +93,7 @@ rc::PointCloud reconstruct_point_cloud(const String image_path, rc::PointCloudBo
 	return point_cloud;
 }
 
+// generate the status json file for GUI
 void generate_result_status(const bool status, const string result_path, const string output_path)
 {
 	rapidjson::Document document;
@@ -112,41 +111,7 @@ void generate_result_status(const bool status, const string result_path, const s
 	ofs.close();
 }
 
-//void viz_display(rc::PointCloud point_cloud, Size guide_size)
-//{
-//	viz::Viz3d window("Coordinate Frame");
-//	viz::WCloud cloud_widget(point_cloud);
-//	cloud_widget.setRenderingProperty(viz::POINT_SIZE, 2);
-//	window.showWidget("plc", cloud_widget);
-//
-//	// show guideline point
-//	auto size = guide_size;
-//	rc::PointCloud ddd_guide_point{
-//		Point3f(0, 0, 0),
-//		Point3f(-size.width / 2, 0, -size.height / 2),
-//		Point3f(size.width / 2, 0, -size.height / 2),
-//		Point3f(-size.width / 2, 0, size.height / 2),
-//		Point3f(size.width / 2, 0, size.height / 2),
-//	};
-//	viz::WCloud ddd_guide(ddd_guide_point, viz::Color::lime());
-//	ddd_guide.setRenderingProperty(viz::POINT_SIZE, 5);
-//	window.showWidget("ddd", ddd_guide);
-//
-//
-//	/*rc::PointCloud dd_guide_point{
-//		Point3f(0, 0, 0),
-//		Point3f(0, 0, size.height),
-//		Point3f(size.width, 0, 0),
-//		Point3f(size.width, 0, size.height),
-//		Point3f(size.width / 2, 0, size.height / 2),
-//	};
-//	viz::WCloud dd_guide(dd_guide_point, viz::Color::red());
-//	dd_guide.setRenderingProperty(viz::POINT_SIZE, 5);
-//	window.showWidget("dd", dd_guide);*/
-//
-//	window.spin();
-//}
-
+// map point cloud to volume form
 Point3f map_point_coordinate(Point3d point, Size image_size)
 {
 	return Point3f(
