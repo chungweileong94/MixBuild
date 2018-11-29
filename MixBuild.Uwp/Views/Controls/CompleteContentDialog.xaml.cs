@@ -1,5 +1,7 @@
 ﻿using System;
+using Windows.Storage;
 using Windows.Storage.Pickers;
+using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
@@ -36,10 +38,19 @@ namespace MixBuild.Uwp.Views.Controls
 
             if (folder != null)
             {
-                // TODO: copy the output file
+                try
+                {
+                    var file = await StorageFile.GetFileFromPathAsync(OutputFilePath);
+                    await file.MoveAsync(folder, file.Name, NameCollisionOption.ReplaceExisting);
 
-                CanDismiss = true;
-                sender.Hide();
+                    CanDismiss = true;
+                    sender.Hide();
+                }
+                catch 
+                {
+                    MessageDialog errorDialog = new MessageDialog("Something went wrong.");
+                    await errorDialog.ShowAsync();
+                }
             }
         }
     }
