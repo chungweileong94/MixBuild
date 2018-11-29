@@ -40,6 +40,12 @@ namespace rc
 
 	typedef vector<vector<vector<bool>>> Volume;
 
+	typedef struct Cube
+	{
+		vector<bool> front;
+		vector<bool> back;
+	};
+
 #pragma endregion
 
 #pragma region methods_declaration
@@ -47,10 +53,11 @@ namespace rc
 	void extract_image_src_set(const String& dir, ImageSrcSet& out_image_src_set);
 	void extract_shape(const ImageSrcSet& image_src_set, ShapeSet& out_shape_set);
 	void create_othogonal_projection(const ShapeSet& shape_set, OthProjection& out_othogonal_Projection);
-	void calculate_point_cloud(const OthProjection& othogonal_projection, PointCloud& out_point_cloud, PointCloudBoundary& out_boundary, const int cube_size = 10);
+	void calculate_point_cloud(const OthProjection& othogonal_projection, PointCloud& out_point_cloud, const int cube_size = 10);
 	void convert_point_cloud_to_volume(const PointCloud& point_cloud, Volume& out_volume, const Size image_size);
 	void __extract_contours(const ImageSrcSet& image_src_set, ContoursSet& out_contours_set);
-	void __optimize_point_cloud(const PointCloud& point_cloud, PointCloud& out_point_cloud, PointCloudBoundary& out_boundary, const int cube_size, const Size image_size);
+	void __optimize_point_cloud(const PointCloud& point_cloud, PointCloud& out_point_cloud, const int cube_size, const Size image_size);
+	bool __surface_condition_check(const Cube cube, const vector<bool> cube_face);
 	void __convert_point_cloud_origin_form(PointCloud& point_cloud, const PointCloudOriginForm origin_form, const Size image_size);
 	void __rotate_point_cloud_x_axis(PointCloud& point_cloud, float degree);
 	void __rotate_point_cloud_y_axis(PointCloud& point_cloud, float degree);
@@ -131,7 +138,7 @@ namespace rc
 	}
 
 	// calculate point cloud
-	void calculate_point_cloud(const OthProjection& othogonal_projection, PointCloud& out_point_cloud, PointCloudBoundary& out_boundary, const int cube_size)
+	void calculate_point_cloud(const OthProjection& othogonal_projection, PointCloud& out_point_cloud, const int cube_size)
 	{
 		auto image_size = othogonal_projection.front.size();
 		PointCloud init_point_cloud, complete_point_cloud;
@@ -171,12 +178,12 @@ namespace rc
 		}
 
 		// optimize point cloud (remove inner point)
-		__optimize_point_cloud(complete_point_cloud, out_point_cloud, out_boundary, cube_size, image_size);
+		__optimize_point_cloud(complete_point_cloud, out_point_cloud, cube_size, image_size);
 
 		// rotate back
 		__convert_point_cloud_origin_form(out_point_cloud, PointCloudOriginForm::_3D, image_size);
 		__rotate_point_cloud_x_axis(out_point_cloud, 180);
-		__rotate_point_cloud_y_axis(out_point_cloud, 90);
+		//__rotate_point_cloud_y_axis(out_point_cloud, 90);
 	}
 
 	// convert point cloud to volume
@@ -208,21 +215,22 @@ namespace rc
 		}
 	}
 
-	// remove inner point cloud
-	void __optimize_point_cloud(const PointCloud& point_cloud, PointCloud& out_point_cloud, PointCloudBoundary& out_boundary, const int cube_size, const Size image_size)
+	// remove inner point cloud & optimize for surface rendering
+	void __optimize_point_cloud(const PointCloud& point_cloud, PointCloud& out_point_cloud, const int cube_size, const Size image_size)
 	{
 		// find the model volume size
 		bool initialize = false;
 
+		PointCloudBoundary boundary;
 		for (const auto point : point_cloud)
 		{
-			out_boundary.minX = !initialize || point.x < out_boundary.minX ? point.x : out_boundary.minX;
-			out_boundary.minY = !initialize || point.y < out_boundary.minY ? point.y : out_boundary.minY;
-			out_boundary.minZ = !initialize || point.z < out_boundary.minZ ? point.z : out_boundary.minZ;
+			boundary.minX = !initialize || point.x < boundary.minX ? point.x : boundary.minX;
+			boundary.minY = !initialize || point.y < boundary.minY ? point.y : boundary.minY;
+			boundary.minZ = !initialize || point.z < boundary.minZ ? point.z : boundary.minZ;
 
-			out_boundary.maxX = !initialize || point.x > out_boundary.maxX ? point.x : out_boundary.maxX;
-			out_boundary.maxY = !initialize || point.y > out_boundary.maxY ? point.y : out_boundary.maxY;
-			out_boundary.maxZ = !initialize || point.z > out_boundary.maxZ ? point.z : out_boundary.maxZ;
+			boundary.maxX = !initialize || point.x > boundary.maxX ? point.x : boundary.maxX;
+			boundary.maxY = !initialize || point.y > boundary.maxY ? point.y : boundary.maxY;
+			boundary.maxZ = !initialize || point.z > boundary.maxZ ? point.z : boundary.maxZ;
 			initialize = true;
 		}
 
@@ -230,98 +238,212 @@ namespace rc
 		Volume volume;
 		convert_point_cloud_to_volume(point_cloud, volume, image_size);
 
-		// retrieve only the surface points
-		PointCloud surface_point_cloud;
-
-		/// front & back
-		for (auto x = out_boundary.minX; x <= out_boundary.maxX; x += cube_size)
+		for (auto x = boundary.minX; x < boundary.maxX; x += cube_size)
 		{
-			for (auto y = out_boundary.minY; y <= out_boundary.maxY; y += cube_size)
+			for (auto y = boundary.minY; y < boundary.maxY; y += cube_size)
 			{
-				for (auto z = out_boundary.minZ; z <= out_boundary.maxZ; z += cube_size)
+				for (auto z = boundary.minZ; z < boundary.maxZ; z += cube_size)
 				{
-					if (volume[x][y][z])
+#pragma region front
+					Cube cube
 					{
-						surface_point_cloud.push_back(Point3d(x, y, z));
-						break;
-					}
-				}
-				for (auto z = out_boundary.maxZ; z >= out_boundary.minZ; z -= cube_size)
-				{
-					if (volume[x][y][z])
-					{
-						surface_point_cloud.push_back(Point3d(x, y, z));
-						break;
-					}
-				}
-			}
-		}
+						vector<bool>{
+							volume[x][y][z],
+							volume[x + cube_size][y][z],
+							volume[x + cube_size][y + cube_size][z],
+							volume[x][y + cube_size][z]
+						},
+						vector<bool>
+						{
+							volume[x][y][z + cube_size],
+							volume[x + cube_size][y][z + cube_size],
+							volume[x + cube_size][y + cube_size][z + cube_size],
+							volume[x][y + cube_size][z + cube_size]
+						}
+					};
 
-		/// left & right
-		for (auto z = out_boundary.minZ; z <= out_boundary.maxZ; z += cube_size)
-		{
-			for (auto y = out_boundary.minY; y <= out_boundary.maxY; y += cube_size)
-			{
-				for (auto x = out_boundary.minX; x <= out_boundary.maxX; x += cube_size)
-				{
-					if (volume[x][y][z])
+					vector<bool> cube_face
 					{
-						surface_point_cloud.push_back(Point3d(x, y, z));
-						break;
-					}
-				}
-				for (auto x = out_boundary.maxX; x >= out_boundary.minX; x -= cube_size)
-				{
-					if (volume[x][y][z])
-					{
-						surface_point_cloud.push_back(Point3d(x, y, z));
-						break;
-					}
-				}
-			}
-		}
+						volume[x][y][z - cube_size],
+						volume[x + cube_size][y][z - cube_size],
+						volume[x + cube_size][y + cube_size][z - cube_size],
+						volume[x][y + cube_size][z - cube_size]
+					};
 
-		/// top & bottom
-		for (auto z = out_boundary.minZ; z <= out_boundary.maxZ; z += cube_size)
-		{
-			for (auto x = out_boundary.minX; x <= out_boundary.maxX; x += cube_size)
-			{
-				for (auto y = out_boundary.minY; y <= out_boundary.maxY; y += cube_size)
-				{
-					if (volume[x][y][z])
-					{
-						surface_point_cloud.push_back(Point3d(x, y, z));
-						break;
-					}
-				}
-
-				for (auto y = out_boundary.maxY; y >= out_boundary.minY; y -= cube_size)
-				{
-					if (volume[x][y][z])
-					{
-						surface_point_cloud.push_back(Point3d(x, y, z));
-						break;
-					}
-				}
-			}
-		}
-
-		// remove redundant points (each surface might have the intercept points)
-		convert_point_cloud_to_volume(surface_point_cloud, volume, image_size);
-
-		for (auto x = out_boundary.minX; x <= out_boundary.maxX; x += cube_size)
-		{
-			for (auto y = out_boundary.minY; y <= out_boundary.maxY; y += cube_size)
-			{
-				for (auto z = out_boundary.minZ; z <= out_boundary.maxZ; z += cube_size)
-				{
-					if (volume[x][y][z])
+					if (__surface_condition_check(cube, cube_face))
 					{
 						out_point_cloud.push_back(Point3d(x, y, z));
+						out_point_cloud.push_back(Point3d(x + cube_size, y, z));
+						out_point_cloud.push_back(Point3d(x + cube_size, y + cube_size, z));
+						out_point_cloud.push_back(Point3d(x, y + cube_size, z));
 					}
+#pragma endregion
+
+#pragma region back
+					cube = Cube
+					{
+						vector<bool>
+						{
+							volume[x + cube_size][y][z + cube_size],
+							volume[x][y][z + cube_size],
+							volume[x][y + cube_size][z + cube_size],
+							volume[x + cube_size][y + cube_size][z + cube_size]
+						},
+						vector<bool>
+						{
+							volume[x + cube_size][y][z],
+							volume[x][y][z],
+							volume[x][y + cube_size][z],
+							volume[x + cube_size][y + cube_size][z]
+						}
+					};
+
+					cube_face = vector<bool>
+					{
+						volume[x + cube_size][y][z + cube_size * 2],
+						volume[x][y][z + cube_size * 2],
+						volume[x][y + cube_size][z + cube_size * 2],
+						volume[x + cube_size][y + cube_size][z + cube_size * 2]
+					};
+
+					if (__surface_condition_check(cube, cube_face))
+					{
+						out_point_cloud.push_back(Point3d(x + cube_size, y, z + cube_size));
+						out_point_cloud.push_back(Point3d(x, y, z + cube_size));
+						out_point_cloud.push_back(Point3d(x, y + cube_size, z + cube_size));
+						out_point_cloud.push_back(Point3d(x + cube_size, y + cube_size, z + cube_size));
+					}
+#pragma endregion
+
+#pragma region left
+					cube = Cube
+					{
+						vector<bool>
+						{
+							volume[x][y][z + cube_size],
+							volume[x][y][z],
+							volume[x][y + cube_size][z],
+							volume[x][y + cube_size][z + cube_size]
+						},
+						vector<bool>
+						{
+							volume[x + cube_size][y][z + cube_size],
+							volume[x + cube_size][y][z],
+							volume[x + cube_size][y + cube_size][z],
+							volume[x + cube_size][y + cube_size][z + cube_size]
+						}
+					};
+
+					cube_face = vector<bool>
+					{
+						volume[x - cube_size][y][z + cube_size],
+						volume[x - cube_size][y][z],
+						volume[x - cube_size][y + cube_size][z],
+						volume[x - cube_size][y + cube_size][z + cube_size]
+					};
+
+					if (__surface_condition_check(cube, cube_face))
+					{
+						out_point_cloud.push_back(Point3d(x, y, z + cube_size));
+						out_point_cloud.push_back(Point3d(x, y, z));
+						out_point_cloud.push_back(Point3d(x, y + cube_size, z));
+						out_point_cloud.push_back(Point3d(x, y + cube_size, z + cube_size));
+					}
+#pragma endregion
+
+#pragma region right
+					cube = Cube
+					{
+						vector<bool>
+						{
+							volume[x + cube_size][y][z],
+							volume[x + cube_size][y][z + cube_size],
+							volume[x + cube_size][y + cube_size][z + cube_size],
+							volume[x + cube_size][y + cube_size][z]
+						},
+						vector<bool>
+						{
+							volume[x][y][z],
+							volume[x][y][z + cube_size],
+							volume[x][y + cube_size][z + cube_size],
+							volume[x][y + cube_size][z]
+						}
+					};
+
+					cube_face = vector<bool>
+					{
+						volume[x + cube_size * 2][y][z],
+						volume[x + cube_size * 2][y][z + cube_size],
+						volume[x + cube_size * 2][y + cube_size][z + cube_size],
+						volume[x + cube_size * 2][y + cube_size][z]
+					};
+
+					if (__surface_condition_check(cube, cube_face))
+					{
+						out_point_cloud.push_back(Point3d(x + cube_size, y, z));
+						out_point_cloud.push_back(Point3d(x + cube_size, y, z + cube_size));
+						out_point_cloud.push_back(Point3d(x + cube_size, y + cube_size, z + cube_size));
+						out_point_cloud.push_back(Point3d(x + cube_size, y + cube_size, z));
+					}
+#pragma endregion
+
+#pragma region top
+					cube = Cube
+					{
+						vector<bool>
+						{
+							volume[x][y][z + cube_size],
+							volume[x + cube_size][y][z + cube_size],
+							volume[x + cube_size][y][z],
+							volume[x][y][z]
+						},
+						vector<bool>
+						{
+							volume[x][y + cube_size][z + cube_size],
+							volume[x + cube_size][y + cube_size][z + cube_size],
+							volume[x + cube_size][y + cube_size][z],
+							volume[x][y + cube_size][z]
+						}
+					};
+
+					cube_face = vector<bool>
+					{
+						volume[x][y - cube_size][z + cube_size],
+						volume[x + cube_size][y - cube_size][z + cube_size],
+						volume[x + cube_size][y - cube_size][z],
+						volume[x][y - cube_size][z]
+					};
+
+					if (__surface_condition_check(cube, cube_face))
+					{
+						out_point_cloud.push_back(Point3d(x, y, z + cube_size));
+						out_point_cloud.push_back(Point3d(x + cube_size, y, z + cube_size));
+						out_point_cloud.push_back(Point3d(x + cube_size, y, z));
+						out_point_cloud.push_back(Point3d(x, y, z));
+					}
+#pragma endregion
 				}
 			}
 		}
+	}
+
+	bool __surface_condition_check(const Cube cube, const vector<bool> cube_face)
+	{
+		bool must_condition = cube.back[0] && cube.back[1] && cube.back[2] && cube.back[3] &&
+			cube.front[0] && cube.front[1] && cube.front[2] && cube.front[3];
+
+		bool condition_1 = !cube_face[0] && !cube_face[1] && !cube_face[2] && !cube_face[3];
+		bool condition_2 = !cube_face[0] && !cube_face[1] && cube_face[2] && cube_face[3];
+		bool condition_3 = cube_face[0] && cube_face[1] && !cube_face[2] && !cube_face[3];
+		bool condition_4 = !cube_face[0] && cube_face[1] && cube_face[2] && !cube_face[3];
+		bool condition_5 = cube_face[0] && !cube_face[1] && !cube_face[2] && cube_face[3];
+
+		bool condition_6 = cube_face[0] && !cube_face[1] && !cube_face[2] && !cube_face[3];
+		bool condition_7 = !cube_face[0] && cube_face[1] && !cube_face[2] && !cube_face[3];
+		bool condition_8 = !cube_face[0] && !cube_face[1] && cube_face[2] && !cube_face[3];
+		bool condition_9 = !cube_face[0] && !cube_face[1] && !cube_face[2] && cube_face[3];
+
+		return must_condition && (condition_1 || condition_2 || condition_3 || condition_4 || condition_5 || condition_6 || condition_7 || condition_8 || condition_9);
 	}
 
 	// covert point cloud origin form (2D <-> 3D)

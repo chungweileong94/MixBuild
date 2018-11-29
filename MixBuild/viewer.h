@@ -30,7 +30,7 @@ namespace viewer
 	{
 		float translate_x = 0, translate_y = 0, translate_z = 30;
 		float rotate_x = 0, rotate_y = 0, rotate_z = 0;
-		float scale_x = 2, scale_y = 2, scale_z = 2;
+		float scale_x = 1, scale_y = 1, scale_z = 1;
 
 		void translate(float x, float y, float z)
 		{

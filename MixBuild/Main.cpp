@@ -16,11 +16,12 @@ viewer::Frustum __frustum;
 viewer::WorldTransform __world;
 viewer::TransformController __controller;
 
-rc::PointCloud reconstruct_point_cloud(const String image_path, rc::PointCloudBoundary& out_boundary);
+rc::PointCloud reconstruct_point_cloud(const String image_path, Size& out_image_size);
 void generate_result_status(const bool status, const string result_path, const string output_path);
 Point3f map_point_coordinate(Point3d point, Size image_size);
 void render_model(int argc, char** argv, function<void()> draw_callback);
 void __init_perspective_view(int width, int height);
+void __init_lighting();
 void __display();
 void __reshape(int w, int h);
 void __mouse(int button, int state, int x, int y);
@@ -46,20 +47,19 @@ int main(int argc, char* argv[])
 	HRESULT result = SHGetFolderPath(NULL, CSIDL_MYPICTURES, NULL, SHGFP_TYPE_CURRENT, folder);
 	image_path = String(String(folder) + "\\MixBuild");
 
-	rc::PointCloudBoundary boundary;
-	auto point_cloud = reconstruct_point_cloud(image_path, boundary);
+	Size image_size;
+	auto point_cloud = reconstruct_point_cloud(image_path, image_size);
 
-	generate_result_status(true, string(image_path + "\\test.glb"), image_path);
+	//generate_result_status(true, string(image_path + "\\model.txt"), image_path);
 
 	auto draw_callback = [&]()
 	{
-		glBegin(GL_POINTS);
-		glPointSize(40);
+		glBegin(GL_QUADS);
 		glColor3d(1, 1, 1);
 
 		for (const auto p : point_cloud)
 		{
-			Point3f mapped_point = map_point_coordinate(p, Size(1920, 1080));
+			Point3f mapped_point = map_point_coordinate(p, image_size);
 			glVertex3f(mapped_point.x, mapped_point.y, mapped_point.z);
 		}
 
@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
 }
 
 // reconstuct point cloud
-rc::PointCloud reconstruct_point_cloud(const String image_path, rc::PointCloudBoundary& out_boundary)
+rc::PointCloud reconstruct_point_cloud(const String image_path, Size& out_image_size)
 {
 	rc::ImageSrcSet image_src_set;
 	try { rc::extract_image_src_set(image_path, image_src_set); }
@@ -85,10 +85,11 @@ rc::PointCloud reconstruct_point_cloud(const String image_path, rc::PointCloudBo
 
 	rc::OthProjection oth_proj;
 	rc::create_othogonal_projection(shape_set, oth_proj);
+	out_image_size = oth_proj.front.size();
 
 	rc::PointCloud point_cloud;
 	int cube_size = 10;
-	rc::calculate_point_cloud(oth_proj, point_cloud, out_boundary, cube_size);
+	rc::calculate_point_cloud(oth_proj, point_cloud, cube_size);
 
 	return point_cloud;
 }
@@ -116,7 +117,7 @@ Point3f map_point_coordinate(Point3d point, Size image_size)
 {
 	return Point3f(
 		image_size.width / __window.width * point.x / __window.width,
-		image_size.height / __window.height * point.y / __window.height,
+		image_size.width / __window.width * point.y / __window.width,
 		image_size.width / __window.width * point.z / __window.width
 	);
 }
@@ -126,7 +127,7 @@ void render_model(int argc, char** argv, function<void()> draw_callback)
 {
 	__window = {
 		"Result",
-		1000,
+		700,
 		700,
 		draw_callback
 	};
@@ -146,6 +147,7 @@ void render_model(int argc, char** argv, function<void()> draw_callback)
 	glClearColor(.2, .2, .2, 1);
 
 	__init_perspective_view(__window.width, __window.height);
+	//__init_lighting();
 
 	glutMainLoop();
 }
@@ -166,6 +168,35 @@ void __init_perspective_view(int width, int height)
 		__frustum.ref_x, __frustum.ref_y, __frustum.ref_z,
 		__frustum.up_x, __frustum.up_y, __frustum.up_z
 	);
+}
+
+// init lighting
+void __init_lighting()
+{
+	float diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	float specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	float ambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	float specref[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	float position[] = { 10.0f, 10.0f, 10.0f, 1.0f };
+	short shininess = 255;
+
+	glDisable(GL_LIGHTING);
+
+	// create light
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
+	glLightfv(GL_LIGHT0, GL_POSITION, position);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
+	glEnable(GL_LIGHT0);
+
+	// create materials
+	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+	glEnable(GL_COLOR_MATERIAL);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, specref);
+	glMateriali(GL_FRONT, GL_SHININESS, shininess);
+
+	glEnable(GL_NORMALIZE);
+	glEnable(GL_LIGHTING);
 }
 
 // window display callback
