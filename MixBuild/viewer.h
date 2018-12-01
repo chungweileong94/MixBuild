@@ -12,7 +12,6 @@ namespace viewer
 	struct Window
 	{
 		string title;
-		int width, height;
 		function<void()> draw_callback;
 	};
 

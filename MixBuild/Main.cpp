@@ -11,15 +11,17 @@
 
 using namespace std;
 
+const Size __window_size(700, 700);
 viewer::Window __window;
 viewer::Frustum __frustum;
 viewer::WorldTransform __world;
 viewer::TransformController __controller;
 
 rc::PointCloud reconstruct_point_cloud(const String image_path, Size& out_image_size, rc::NormalSet& out_normal_set);
+string generate_output_file(const rc::PointCloud point_cloud, const rc::NormalSet normal_set, const string output_path);
 void generate_result_status(const bool status, const string result_path, const string output_path);
-Point3f map_point_coordinate(Point3d point, Size image_size);
-void render_model(int argc, char** argv, function<void()> draw_callback);
+rc::PointCloud map_point_cloud_coordinate(const rc::PointCloud point_cloud, const Size image_size, const Size window_size);
+void render_model(int argc, char** argv, Size Window_size, function<void()> draw_callback);
 void __init_perspective_view(int width, int height);
 void __init_lighting();
 void __display();
@@ -39,23 +41,25 @@ int main(int argc, char* argv[])
 
 	Size image_size;
 	rc::NormalSet normal_set;
-	auto point_cloud = reconstruct_point_cloud(image_path, image_size, normal_set);
+	auto vertices_point_cloud = reconstruct_point_cloud(image_path, image_size, normal_set);
+	auto mapped_point_cloud = map_point_cloud_coordinate(vertices_point_cloud, image_size, __window_size);
 
-	generate_result_status(true, string(image_path + "\\model.txt"), image_path);
+	string output_file_path = generate_output_file(mapped_point_cloud, normal_set, image_path);
+	generate_result_status(true, output_file_path, image_path);
 
 	auto draw_callback = [&]()
 	{
 		glFrontFace(GL_CCW);
-		for (auto i = 0; i < normal_set.size(); i++)
+		for (auto normal_idx = 0; normal_idx < normal_set.size(); normal_idx++)
 		{
 			glColor4d(1, 1, 1, 1);
 			glBegin(GL_POLYGON);
-			glNormal3f(normal_set[i].x, normal_set[i].y, normal_set[i].z);
+			glNormal3f(normal_set[normal_idx].x, normal_set[normal_idx].y, normal_set[normal_idx].z);
 
-			for (auto j = i * 4; j < i * 4 + 4; j++)
+			for (auto vertices_idx = normal_idx * 4; vertices_idx < normal_idx * 4 + 4; vertices_idx++)
 			{
-				Point3f mapped_point = map_point_coordinate(point_cloud[j], image_size);
-				glVertex3f(mapped_point.x, mapped_point.y, mapped_point.z);
+				auto point = mapped_point_cloud[vertices_idx];
+				glVertex3f(point.x, point.y, point.z);
 			}
 
 			glEnd();
@@ -63,7 +67,7 @@ int main(int argc, char* argv[])
 		glFrontFace(GL_CW);
 	};
 
-	render_model(argc, argv, draw_callback);
+	render_model(argc, argv, __window_size, draw_callback);
 
 	waitKey();
 
@@ -84,11 +88,34 @@ rc::PointCloud reconstruct_point_cloud(const String image_path, Size& out_image_
 	rc::create_othogonal_projection(shape_set, oth_proj);
 	out_image_size = oth_proj.front.size();
 
-	rc::PointCloud point_cloud;
+	rc::PointCloud point_cloud, vertices_point_cloud;
 	int cube_size = 10;
-	rc::calculate_point_cloud(oth_proj, point_cloud, out_normal_set, cube_size);
+	rc::calculate_point_cloud(oth_proj, point_cloud, cube_size);
 
-	return point_cloud;
+	rc::find_surface_vertices(point_cloud, vertices_point_cloud, out_normal_set, cube_size, out_image_size);
+
+	return vertices_point_cloud;
+}
+
+// generate the output file
+string generate_output_file(const rc::PointCloud point_cloud, const rc::NormalSet normal_set, const string output_path)
+{
+	string path = string(output_path + "\\model.txt");
+	ofstream ofs(path);
+
+	for (auto normal_idx = 0; normal_idx < normal_set.size(); normal_idx++)
+	{
+		for (auto vertices_idx = normal_idx * 4; vertices_idx < normal_idx * 4 + 4; vertices_idx++)
+		{
+			ofs << point_cloud[vertices_idx] << " ";
+		}
+
+		ofs << "| " << "(" << normal_set[normal_idx].x << " " << normal_set[normal_idx].y << " " << normal_set[normal_idx].z << ")" << endl;
+	}
+
+	ofs.close();
+
+	return path;
 }
 
 // generate the status json file for GUI
@@ -109,29 +136,36 @@ void generate_result_status(const bool status, const string result_path, const s
 	ofs.close();
 }
 
-// map point cloud to volume form
-Point3f map_point_coordinate(Point3d point, Size image_size)
+// map point cloud coordinate to opengl form
+rc::PointCloud map_point_cloud_coordinate(const rc::PointCloud point_cloud, const Size image_size, const Size window_size)
 {
-	return Point3f(
-		image_size.width / __window.width * point.x / __window.width,
-		image_size.width / __window.width * point.y / __window.width,
-		image_size.width / __window.width * point.z / __window.width
-	);
+	rc::PointCloud mapped_point_cloud;
+
+	for (auto p : point_cloud)
+	{
+		mapped_point_cloud.push_back(
+			Point3f(
+				image_size.width / window_size.width * p.x / window_size.width,
+				image_size.width / window_size.width * p.y / window_size.width,
+				image_size.width / window_size.width * p.z / window_size.width
+			)
+		);
+	}
+
+	return mapped_point_cloud;
 }
 
 // init opengl
-void render_model(int argc, char** argv, function<void()> draw_callback)
+void render_model(int argc, char** argv, Size window_size, function<void()> draw_callback)
 {
 	__window = {
 		"Result",
-		700,
-		700,
 		draw_callback
 	};
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_MULTISAMPLE);
-	glutInitWindowSize(__window.width, __window.height);
+	glutInitWindowSize(window_size.width, window_size.height);
 	glutCreateWindow(__window.title.c_str());
 
 	glutDisplayFunc(__display);
@@ -145,7 +179,7 @@ void render_model(int argc, char** argv, function<void()> draw_callback)
 	glClearColor(0, 0, 0, 0);
 	glEnable(GL_CULL_FACE);
 
-	__init_perspective_view(__window.width, __window.height);
+	__init_perspective_view(window_size.width, window_size.height);
 	__init_lighting();
 
 	glutMainLoop();
@@ -225,13 +259,13 @@ void __display()
 // window reshape
 void __reshape(int w, int h)
 {
-	glutReshapeWindow(__window.width, __window.height);
+	glutReshapeWindow(__window_size.width, __window_size.height);
 }
 
 // mouse click callback
 void __mouse(int button, int state, int x, int y)
 {
-	y = __window.height - y;
+	y = __window_size.height - y;
 
 	switch (button)
 	{
@@ -259,7 +293,7 @@ void __mouse(int button, int state, int x, int y)
 // mouse montion callback
 void __motion(int x, int y)
 {
-	y = __window.height - y;
+	y = __window_size.height - y;
 	int dx = x - __controller.mouse_x;
 	int dy = y - __controller.mouse_y;
 

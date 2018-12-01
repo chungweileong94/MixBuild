@@ -60,10 +60,10 @@ namespace rc
 	void extract_image_src_set(const String& dir, ImageSrcSet& out_image_src_set);
 	void extract_shape(const ImageSrcSet& image_src_set, ShapeSet& out_shape_set);
 	void create_othogonal_projection(const ShapeSet& shape_set, OthProjection& out_othogonal_Projection);
-	void calculate_point_cloud(const OthProjection& othogonal_projection, PointCloud& out_point_cloud, NormalSet& out_normal_set, const int cube_size = 10);
+	void calculate_point_cloud(const OthProjection& othogonal_projection, PointCloud& out_point_cloud, const int cube_size = 10);
+	void find_surface_vertices(PointCloud& point_cloud, PointCloud& out_point_cloud, NormalSet& out_normal_set, const int cube_size, const Size image_size);
 	void convert_point_cloud_to_volume(const PointCloud& point_cloud, Volume& out_volume, const Size image_size);
 	void __extract_contours(const ImageSrcSet& image_src_set, ContoursSet& out_contours_set);
-	void __find_surface_vertices(const PointCloud& point_cloud, PointCloud& out_point_cloud, NormalSet& out_normal_set, const int cube_size, const Size image_size);
 	bool __surface_condition_check(const Cube cube, const vector<bool> cube_face);
 	void __convert_point_cloud_origin_form(PointCloud& point_cloud, const PointCloudOriginForm origin_form, const Size image_size);
 	void __rotate_point_cloud_x_axis(PointCloud& point_cloud, float degree);
@@ -145,10 +145,10 @@ namespace rc
 	}
 
 	// calculate point cloud
-	void calculate_point_cloud(const OthProjection& othogonal_projection, PointCloud& out_point_cloud, NormalSet& out_normal_set, const int cube_size)
+	void calculate_point_cloud(const OthProjection& othogonal_projection, PointCloud& out_point_cloud, const int cube_size)
 	{
 		auto image_size = othogonal_projection.front.size();
-		PointCloud init_point_cloud, complete_point_cloud;
+		PointCloud init_point_cloud;
 
 		// initial point cloud
 		for (auto z = 0; z < image_size.height; z += cube_size)
@@ -180,53 +180,21 @@ namespace rc
 			auto left_pixel = othogonal_projection.left.at<Vec3b>(point.y, point.x);
 			if (left_pixel != Vec3b(0, 0, 0))
 			{
-				complete_point_cloud.push_back(point);
+				out_point_cloud.push_back(point);
 			}
 		}
 
 		// rotate back
-		__convert_point_cloud_origin_form(complete_point_cloud, PointCloudOriginForm::_3D, image_size);
-		__rotate_point_cloud_x_axis(complete_point_cloud, 180);
-		__rotate_point_cloud_y_axis(complete_point_cloud, 90);
-		__convert_point_cloud_origin_form(complete_point_cloud, PointCloudOriginForm::_2D, image_size);
-
-		// optimize point cloud (remove inner point)
-		__find_surface_vertices(complete_point_cloud, out_point_cloud, out_normal_set, cube_size, image_size);
 		__convert_point_cloud_origin_form(out_point_cloud, PointCloudOriginForm::_3D, image_size);
-	}
-
-	// convert point cloud to volume
-	void convert_point_cloud_to_volume(const PointCloud& point_cloud, Volume& out_volume, const Size image_size)
-	{
-		out_volume = Volume(image_size.width, vector<vector<bool>>(image_size.height, vector<bool>(image_size.height, false)));
-		for (const auto point : point_cloud)
-		{
-			out_volume[point.x][point.y][point.z] = true;
-		}
-	}
-
-	// extract contours (feature points)
-	void __extract_contours(const ImageSrcSet& image_src_set, ContoursSet& out_contours_set)
-	{
-		for (auto const &img : image_src_set)
-		{
-			auto img_gray = imread(img.second, IMREAD_GRAYSCALE);
-
-			Mat img_detected;
-			// pre-process image before canny edge detect
-			blur(img_gray, img_detected, Size(3, 3));
-			Canny(img_detected, img_detected, 0, 100);
-
-			// retrieve contours
-			Contours contours;
-			findContours(img_detected, contours, RETR_TREE, CHAIN_APPROX_SIMPLE);
-			out_contours_set[img.first] = contours;
-		}
+		__rotate_point_cloud_x_axis(out_point_cloud, 180);
+		__rotate_point_cloud_y_axis(out_point_cloud, 90);
 	}
 
 	// remove inner point cloud & optimize for surface rendering
-	void __find_surface_vertices(const PointCloud& point_cloud, PointCloud& out_point_cloud, NormalSet& out_normal_set, const int cube_size, const Size image_size)
+	void find_surface_vertices(PointCloud& point_cloud, PointCloud& out_point_cloud, NormalSet& out_normal_set, const int cube_size, const Size image_size)
 	{
+		__convert_point_cloud_origin_form(point_cloud, PointCloudOriginForm::_2D, image_size);
+
 		// find the model volume size
 		bool initialize = false;
 
@@ -481,6 +449,37 @@ namespace rc
 #pragma endregion
 				}
 			}
+		}
+
+		__convert_point_cloud_origin_form(out_point_cloud, PointCloudOriginForm::_3D, image_size);
+	}
+
+	// convert point cloud to volume
+	void convert_point_cloud_to_volume(const PointCloud& point_cloud, Volume& out_volume, const Size image_size)
+	{
+		out_volume = Volume(image_size.width, vector<vector<bool>>(image_size.height, vector<bool>(image_size.height, false)));
+		for (const auto point : point_cloud)
+		{
+			out_volume[point.x][point.y][point.z] = true;
+		}
+	}
+
+	// extract contours (feature points)
+	void __extract_contours(const ImageSrcSet& image_src_set, ContoursSet& out_contours_set)
+	{
+		for (auto const &img : image_src_set)
+		{
+			auto img_gray = imread(img.second, IMREAD_GRAYSCALE);
+
+			Mat img_detected;
+			// pre-process image before canny edge detect
+			blur(img_gray, img_detected, Size(3, 3));
+			Canny(img_detected, img_detected, 0, 100);
+
+			// retrieve contours
+			Contours contours;
+			findContours(img_detected, contours, RETR_TREE, CHAIN_APPROX_SIMPLE);
+			out_contours_set[img.first] = contours;
 		}
 	}
 
