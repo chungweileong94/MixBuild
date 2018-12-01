@@ -135,12 +135,11 @@
     <Content Include="Assets\MB\glewinfo.exe" />
     <Content Include="Assets\MB\glfw3.dll" />
     <Content Include="Assets\MB\MixBuild.exe" />
-    <Content Include="Assets\MB\opencv_core343d.dll" />
-    <Content Include="Assets\MB\opencv_highgui343d.dll" />
-    <Content Include="Assets\MB\opencv_imgcodecs343d.dll" />
-    <Content Include="Assets\MB\opencv_imgproc343d.dll" />
-    <Content Include="Assets\MB\opencv_videoio343d.dll" />
-    <Content Include="Assets\MB\opencv_viz343d.dll" />
+    <Content Include="Assets\MB\opencv_core343.dll" />
+    <Content Include="Assets\MB\opencv_highgui343.dll" />
+    <Content Include="Assets\MB\opencv_imgcodecs343.dll" />
+    <Content Include="Assets\MB\opencv_imgproc343.dll" />
+    <Content Include="Assets\MB\opencv_videoio343.dll" />
     <Content Include="Assets\MB\visualinfo.exe" />
     <Content Include="Assets\SmallTile.scale-100.png" />
     <Content Include="Assets\SmallTile.scale-125.png" />
