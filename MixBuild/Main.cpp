@@ -16,7 +16,7 @@ viewer::Frustum __frustum;
 viewer::WorldTransform __world;
 viewer::TransformController __controller;
 
-rc::PointCloud reconstruct_point_cloud(const String image_path, Size& out_image_size);
+rc::PointCloud reconstruct_point_cloud(const String image_path, Size& out_image_size, rc::NormalSet& out_normal_set);
 void generate_result_status(const bool status, const string result_path, const string output_path);
 Point3f map_point_coordinate(Point3d point, Size image_size);
 void render_model(int argc, char** argv, function<void()> draw_callback);
@@ -29,41 +29,38 @@ void __motion(int x, int y);
 
 int main(int argc, char* argv[])
 {
-	String image_path;
-	//FreeConsole();
-	//if (argc > 0)
-	//{
-	//	// only for debug purpose
-	//	image_path = String(argv[1]);
-	//}
-	//else
-	//{
-	//	CHAR folder[MAX_PATH];
-	//	HRESULT result = SHGetFolderPath(NULL, CSIDL_MYPICTURES, NULL, SHGFP_TYPE_CURRENT, folder);
-	//	image_path = String(String(folder) + "\\MixBuild");
-	//}
+	// hide the console
+	FreeConsole();
 
+	String image_path;
 	CHAR folder[MAX_PATH];
 	HRESULT result = SHGetFolderPath(NULL, CSIDL_MYPICTURES, NULL, SHGFP_TYPE_CURRENT, folder);
 	image_path = String(String(folder) + "\\MixBuild");
 
 	Size image_size;
-	auto point_cloud = reconstruct_point_cloud(image_path, image_size);
+	rc::NormalSet normal_set;
+	auto point_cloud = reconstruct_point_cloud(image_path, image_size, normal_set);
 
-	//generate_result_status(true, string(image_path + "\\model.txt"), image_path);
+	generate_result_status(true, string(image_path + "\\model.txt"), image_path);
 
 	auto draw_callback = [&]()
 	{
-		glBegin(GL_QUADS);
-		glColor3d(1, 1, 1);
-
-		for (const auto p : point_cloud)
+		glFrontFace(GL_CCW);
+		for (auto i = 0; i < normal_set.size(); i++)
 		{
-			Point3f mapped_point = map_point_coordinate(p, image_size);
-			glVertex3f(mapped_point.x, mapped_point.y, mapped_point.z);
-		}
+			glColor4d(1, 1, 1, 1);
+			glBegin(GL_POLYGON);
+			glNormal3f(normal_set[i].x, normal_set[i].y, normal_set[i].z);
 
-		glEnd();
+			for (auto j = i * 4; j < i * 4 + 4; j++)
+			{
+				Point3f mapped_point = map_point_coordinate(point_cloud[j], image_size);
+				glVertex3f(mapped_point.x, mapped_point.y, mapped_point.z);
+			}
+
+			glEnd();
+		}
+		glFrontFace(GL_CW);
 	};
 
 	render_model(argc, argv, draw_callback);
@@ -74,7 +71,7 @@ int main(int argc, char* argv[])
 }
 
 // reconstuct point cloud
-rc::PointCloud reconstruct_point_cloud(const String image_path, Size& out_image_size)
+rc::PointCloud reconstruct_point_cloud(const String image_path, Size& out_image_size, rc::NormalSet& out_normal_set)
 {
 	rc::ImageSrcSet image_src_set;
 	try { rc::extract_image_src_set(image_path, image_src_set); }
@@ -89,7 +86,7 @@ rc::PointCloud reconstruct_point_cloud(const String image_path, Size& out_image_
 
 	rc::PointCloud point_cloud;
 	int cube_size = 10;
-	rc::calculate_point_cloud(oth_proj, point_cloud, cube_size);
+	rc::calculate_point_cloud(oth_proj, point_cloud, out_normal_set, cube_size);
 
 	return point_cloud;
 }
@@ -133,7 +130,7 @@ void render_model(int argc, char** argv, function<void()> draw_callback)
 	};
 
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH | GLUT_MULTISAMPLE);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_MULTISAMPLE);
 	glutInitWindowSize(__window.width, __window.height);
 	glutCreateWindow(__window.title.c_str());
 
@@ -144,10 +141,12 @@ void render_model(int argc, char** argv, function<void()> draw_callback)
 	glutMotionFunc(__motion);
 
 	glEnable(GL_DEPTH_TEST);
-	glClearColor(.2, .2, .2, 1);
+	glEnable(GL_CW);
+	glClearColor(0, 0, 0, 0);
+	glEnable(GL_CULL_FACE);
 
 	__init_perspective_view(__window.width, __window.height);
-	//__init_lighting();
+	__init_lighting();
 
 	glutMainLoop();
 }
@@ -212,7 +211,6 @@ void __display()
 	glRotatef(__world.rotate_z, 0.0f, 0.0f, 1.0f);
 	glScalef(__world.scale_x, __world.scale_y, __world.scale_z);
 
-	glColor3d(1, 1, 1);
 	glPushMatrix();
 	__window.draw_callback();
 	glPopMatrix();

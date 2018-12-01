@@ -20,56 +20,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="imgs\templeSR0001.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="imgs\templeSR0002.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="imgs\templeSR0003.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="imgs\templeSR0004.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="imgs\templeSR0005.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="imgs\templeSR0006.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="imgs\templeSR0007.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="imgs\templeSR0008.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="imgs\templeSR0009.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="imgs\templeSR0010.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="imgs\templeSR0011.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="imgs\templeSR0012.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="imgs\templeSR0013.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="imgs\templeSR0014.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="imgs\templeSR0015.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="imgs\templeSR0016.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="rc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
