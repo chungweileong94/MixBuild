@@ -1,16 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Package 
-  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" 
-  xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" 
-  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" 
-  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" 
-  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10" 
-  IgnorableNamespaces="uap mp rescap">
-  <Identity Name="a36e861b-48c0-4a34-a2fb-d142abc51dd1" Publisher="CN=leong" Version="1.0.0.0" />
-  <mp:PhoneIdentity PhoneProductId="a36e861b-48c0-4a34-a2fb-d142abc51dd1" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10" IgnorableNamespaces="uap mp rescap">
+  <Identity Name="12113LCW.MixBuild" Publisher="CN=2EE58A55-CF42-4B5D-87DC-BA87BB57A874" Version="1.0.0.0" />
+  <mp:PhoneIdentity PhoneProductId="7c6618b4-bd75-4e3a-a065-10e255c83757" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
-    <DisplayName>MixBuild.Uwp</DisplayName>
-    <PublisherDisplayName>leong</PublisherDisplayName>
+    <DisplayName>MixBuild</DisplayName>
+    <PublisherDisplayName>LCW</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
   <Dependencies>
@@ -41,9 +35,8 @@
     </Application>
   </Applications>
   <Capabilities>
-    <Capability Name="internetClient" />
     <uap:Capability Name="picturesLibrary" />
     <uap:Capability Name="removableStorage" />
-    <rescap:Capability Name="runFullTrust"/>
+    <rescap:Capability Name="runFullTrust" />
   </Capabilities>
 </Package>
