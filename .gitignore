@@ -259,3 +259,5 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+/MixBuild.Uwp/Assets/MB/MixBuild.iobj
+/MixBuild.Uwp/Assets/MB/MixBuild.ipdb
