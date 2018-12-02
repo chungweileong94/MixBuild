@@ -210,7 +210,7 @@ void __init_lighting()
 	float specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	float ambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	float specref[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	float position[] = { 10.0f, 10.0f, 10.0f, 1.0f };
+	float position[] = { 50.0f, 50.0f, 50.0f, 1.0f };
 	short shininess = 255;
 
 	glDisable(GL_LIGHTING);
