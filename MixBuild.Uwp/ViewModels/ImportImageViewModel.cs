@@ -65,25 +65,57 @@ namespace MixBuild.Uwp.ViewModels
         private async Task ProceedReconstructionAsync()
         {
             IsLoading = true;
+            bool hasError = false;
             var outputFolder = await KnownFolders.PicturesLibrary.CreateFolderAsync("MixBuild", CreationCollisionOption.OpenIfExists);
+
+            int? imageHeight = null;
+            int? imageWidth = null;
 
             // copy image to the output folder
             foreach (var imageData in ImageCollection)
             {
+                if (imageHeight == null || imageWidth == null)
+                {
+                    imageHeight = imageData.Bitmap.PixelHeight;
+                    imageWidth = imageData.Bitmap.PixelWidth;
+                }
+                else
+                {
+                    if (imageHeight != imageData.Bitmap.PixelHeight || imageWidth != imageData.Bitmap.PixelWidth)
+                    {
+                        hasError = true;
+                    }
+                }
+
                 var fileName = $"{((int)imageData.Face).ToString()}{imageData.File.FileType}";
                 await imageData.File.CopyAsync(outputFolder, fileName, NameCollisionOption.ReplaceExisting);
             }
 
-            // create a status file
-            var statusFile = await outputFolder.CreateFileAsync("status.json", CreationCollisionOption.OpenIfExists);
-            await FileIO.WriteTextAsync(statusFile, JsonConvert.SerializeObject(new Status { status = false, path = "" }));
+            if (hasError)
+            {
+                IsLoading = false;
 
-            // subscribe to file change
-            var query = outputFolder.CreateFileQueryWithOptions(new QueryOptions { FileTypeFilter = { ".json" } });
-            query.ContentsChanged += Query_ContentsChanged;
-            await query.GetFilesAsync();
+                var dialog = new SimpleContentDialog
+                {
+                    Title = "Warning",
+                    Content = "All images should use the same resolution size",
+                    CloseButtonText = "Okay"
+                };
+                await dialog.ShowAsync();
+            }
+            else
+            {
+                // create a status file
+                var statusFile = await outputFolder.CreateFileAsync("status.json", CreationCollisionOption.OpenIfExists);
+                await FileIO.WriteTextAsync(statusFile, JsonConvert.SerializeObject(new Status { status = false, path = "" }));
 
-            await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
+                // subscribe to file change
+                var query = outputFolder.CreateFileQueryWithOptions(new QueryOptions { FileTypeFilter = { ".json" } });
+                query.ContentsChanged += Query_ContentsChanged;
+                await query.GetFilesAsync();
+
+                await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
+            }
         }
 
         private async void Query_ContentsChanged(IStorageQueryResultBase sender, object args)
