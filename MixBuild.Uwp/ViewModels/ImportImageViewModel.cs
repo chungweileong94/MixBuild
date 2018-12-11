@@ -34,6 +34,8 @@ namespace MixBuild.Uwp.ViewModels
 
         public ICommand ProceedReconstructionCommand => new RelayCommand<RoutedEventArgs>(async (e) => await ProceedReconstructionAsync());
 
+        private StorageFileQueryResult fileQueryResult;
+
         public ImportImageViewModel()
         {
             IsReady = false;
@@ -110,9 +112,12 @@ namespace MixBuild.Uwp.ViewModels
                 await FileIO.WriteTextAsync(statusFile, JsonConvert.SerializeObject(new Status { status = false, path = "" }));
 
                 // subscribe to file change
-                var query = outputFolder.CreateFileQueryWithOptions(new QueryOptions { FileTypeFilter = { ".json" } });
-                query.ContentsChanged += Query_ContentsChanged;
-                await query.GetFilesAsync();
+                if (fileQueryResult == null)
+                {
+                    fileQueryResult = outputFolder.CreateFileQueryWithOptions(new QueryOptions { FileTypeFilter = { ".json" } });
+                }
+                fileQueryResult.ContentsChanged += Query_ContentsChanged;
+                await fileQueryResult.GetFilesAsync();
 
                 await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
             }
@@ -140,6 +145,12 @@ namespace MixBuild.Uwp.ViewModels
 
                                 var dialog = new CompleteContentDialog(status.path);
                                 var dialogResult = await dialog.ShowAsync();
+
+                                if (dialogResult == Windows.UI.Xaml.Controls.ContentDialogResult.None)
+                                {
+                                    // unsubscribe the file change event
+                                    fileQueryResult.ContentsChanged -= Query_ContentsChanged;
+                                }
                             }
                             catch { }
                         }
