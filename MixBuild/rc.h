@@ -239,7 +239,7 @@ namespace rc
 						}
 					};
 
-					vector<bool> cube_face
+					vector<bool> face_points
 					{
 						volume[x][y + cube_size][z - cube_size],
 						volume[x + cube_size][y + cube_size][z - cube_size],
@@ -247,7 +247,7 @@ namespace rc
 						volume[x][y][z - cube_size]
 					};
 
-					if (__surface_condition_check(cube, cube_face))
+					if (__surface_condition_check(cube, face_points))
 					{
 						out_point_cloud.push_back(Point3d(x, y + cube_size, z));
 						out_point_cloud.push_back(Point3d(x + cube_size, y + cube_size, z));
@@ -277,7 +277,7 @@ namespace rc
 						}
 					};
 
-					cube_face = vector<bool>
+					face_points = vector<bool>
 					{
 						volume[x + cube_size][y + cube_size][z + cube_size * 2],
 						volume[x][y + cube_size][z + cube_size * 2],
@@ -285,7 +285,7 @@ namespace rc
 						volume[x + cube_size][y][z + cube_size * 2]
 					};
 
-					if (__surface_condition_check(cube, cube_face))
+					if (__surface_condition_check(cube, face_points))
 					{
 						out_point_cloud.push_back(Point3d(x + cube_size, y + cube_size, z + cube_size));
 						out_point_cloud.push_back(Point3d(x, y + cube_size, z + cube_size));
@@ -315,7 +315,7 @@ namespace rc
 						}
 					};
 
-					cube_face = vector<bool>
+					face_points = vector<bool>
 					{
 						volume[x - cube_size][y + cube_size][z + cube_size],
 						volume[x - cube_size][y + cube_size][z],
@@ -323,7 +323,7 @@ namespace rc
 						volume[x - cube_size][y][z + cube_size],
 					};
 
-					if (__surface_condition_check(cube, cube_face))
+					if (__surface_condition_check(cube, face_points))
 					{
 						out_point_cloud.push_back(Point3d(x, y + cube_size, z + cube_size));
 						out_point_cloud.push_back(Point3d(x, y + cube_size, z));
@@ -353,7 +353,7 @@ namespace rc
 						}
 					};
 
-					cube_face = vector<bool>
+					face_points = vector<bool>
 					{
 						volume[x + cube_size * 2][y + cube_size][z],
 						volume[x + cube_size * 2][y + cube_size][z + cube_size],
@@ -361,7 +361,7 @@ namespace rc
 						volume[x + cube_size * 2][y][z]
 					};
 
-					if (__surface_condition_check(cube, cube_face))
+					if (__surface_condition_check(cube, face_points))
 					{
 						out_point_cloud.push_back(Point3d(x + cube_size, y + cube_size, z));
 						out_point_cloud.push_back(Point3d(x + cube_size, y + cube_size, z + cube_size));
@@ -391,7 +391,7 @@ namespace rc
 						}
 					};
 
-					cube_face = vector<bool>
+					face_points = vector<bool>
 					{
 						volume[x][y + cube_size * 2][z + cube_size],
 						volume[x + cube_size][y + cube_size * 2][z + cube_size],
@@ -399,7 +399,7 @@ namespace rc
 						volume[x][y + cube_size * 2][z]
 					};
 
-					if (__surface_condition_check(cube, cube_face))
+					if (__surface_condition_check(cube, face_points))
 					{
 						out_point_cloud.push_back(Point3d(x, y + cube_size, z + cube_size));
 						out_point_cloud.push_back(Point3d(x + cube_size, y + cube_size, z + cube_size));
@@ -429,7 +429,7 @@ namespace rc
 						}
 					};
 
-					cube_face = vector<bool>
+					face_points = vector<bool>
 					{
 						volume[x + cube_size][y - cube_size][z + cube_size],
 						volume[x][y - cube_size][z + cube_size],
@@ -437,7 +437,7 @@ namespace rc
 						volume[x + cube_size][y - cube_size][z]
 					};
 
-					if (__surface_condition_check(cube, cube_face))
+					if (__surface_condition_check(cube, face_points))
 					{
 						out_point_cloud.push_back(Point3d(x + cube_size, y, z + cube_size));
 						out_point_cloud.push_back(Point3d(x, y, z + cube_size));
@@ -500,7 +500,15 @@ namespace rc
 		bool condition_8 = !face_points[0] && !face_points[1] && face_points[2] && !face_points[3];
 		bool condition_9 = !face_points[0] && !face_points[1] && !face_points[2] && face_points[3];
 
-		return must_condition && (condition_1 || condition_2 || condition_3 || condition_4 || condition_5 || condition_6 || condition_7 || condition_8 || condition_9);
+		bool condition_10 = !face_points[0] && face_points[1] && face_points[2] && face_points[3];
+		bool condition_11 = face_points[0] && !face_points[1] && face_points[2] && face_points[3];
+		bool condition_12 = face_points[0] && face_points[1] && !face_points[2] && face_points[3];
+		bool condition_13 = face_points[0] && face_points[1] && face_points[2] && !face_points[3];
+
+		return must_condition &&
+			(condition_1 || condition_2 || condition_3 || condition_4 || condition_5 || condition_6
+				|| condition_7 || condition_8 || condition_9 || condition_10
+				|| condition_11 || condition_12 || condition_13);
 	}
 
 	// covert point cloud origin form (2D <-> 3D)
