@@ -64,7 +64,7 @@ namespace rc
 	void find_surface_vertices(PointCloud& point_cloud, PointCloud& out_point_cloud, NormalSet& out_normal_set, const int cube_size, const Size image_size);
 	void convert_point_cloud_to_volume(const PointCloud& point_cloud, Volume& out_volume, const Size image_size);
 	void __extract_contours(const ImageSrcSet& image_src_set, ContoursSet& out_contours_set);
-	bool __surface_condition_check(const Cube cube, const vector<bool> cube_face);
+	bool __surface_condition_check(const Cube cube, const vector<bool> face_points);
 	void __convert_point_cloud_origin_form(PointCloud& point_cloud, const PointCloudOriginForm origin_form, const Size image_size);
 	void __rotate_point_cloud_x_axis(PointCloud& point_cloud, float degree);
 	void __rotate_point_cloud_y_axis(PointCloud& point_cloud, float degree);
@@ -484,21 +484,21 @@ namespace rc
 	}
 
 	// check if the vectices can construct a surface
-	bool __surface_condition_check(const Cube cube, const vector<bool> cube_face)
+	bool __surface_condition_check(const Cube cube, const vector<bool> face_points)
 	{
 		bool must_condition = cube.back[0] && cube.back[1] && cube.back[2] && cube.back[3] &&
 			cube.front[0] && cube.front[1] && cube.front[2] && cube.front[3];
 
-		bool condition_1 = !cube_face[0] && !cube_face[1] && !cube_face[2] && !cube_face[3];
-		bool condition_2 = !cube_face[0] && !cube_face[1] && cube_face[2] && cube_face[3];
-		bool condition_3 = cube_face[0] && cube_face[1] && !cube_face[2] && !cube_face[3];
-		bool condition_4 = !cube_face[0] && cube_face[1] && cube_face[2] && !cube_face[3];
-		bool condition_5 = cube_face[0] && !cube_face[1] && !cube_face[2] && cube_face[3];
+		bool condition_1 = !face_points[0] && !face_points[1] && !face_points[2] && !face_points[3];
+		bool condition_2 = !face_points[0] && !face_points[1] && face_points[2] && face_points[3];
+		bool condition_3 = face_points[0] && face_points[1] && !face_points[2] && !face_points[3];
+		bool condition_4 = !face_points[0] && face_points[1] && face_points[2] && !face_points[3];
+		bool condition_5 = face_points[0] && !face_points[1] && !face_points[2] && face_points[3];
 
-		bool condition_6 = cube_face[0] && !cube_face[1] && !cube_face[2] && !cube_face[3];
-		bool condition_7 = !cube_face[0] && cube_face[1] && !cube_face[2] && !cube_face[3];
-		bool condition_8 = !cube_face[0] && !cube_face[1] && cube_face[2] && !cube_face[3];
-		bool condition_9 = !cube_face[0] && !cube_face[1] && !cube_face[2] && cube_face[3];
+		bool condition_6 = face_points[0] && !face_points[1] && !face_points[2] && !face_points[3];
+		bool condition_7 = !face_points[0] && face_points[1] && !face_points[2] && !face_points[3];
+		bool condition_8 = !face_points[0] && !face_points[1] && face_points[2] && !face_points[3];
+		bool condition_9 = !face_points[0] && !face_points[1] && !face_points[2] && face_points[3];
 
 		return must_condition && (condition_1 || condition_2 || condition_3 || condition_4 || condition_5 || condition_6 || condition_7 || condition_8 || condition_9);
 	}
