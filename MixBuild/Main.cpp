@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
 		glFrontFace(GL_CCW);
 		for (auto normal_idx = 0; normal_idx < normal_set.size(); normal_idx++)
 		{
-			glColor4d(1, 1, 1, 1);
+			glColor4d(.4, .6, .93, 1);
 			glBegin(GL_POLYGON);
 			glNormal3f(normal_set[normal_idx].x, normal_set[normal_idx].y, normal_set[normal_idx].z);
 
@@ -100,18 +100,45 @@ rc::PointCloud reconstruct_point_cloud(const String image_path, Size& out_image_
 // generate the output file
 string generate_output_file(const rc::PointCloud point_cloud, const rc::NormalSet normal_set, const string output_path)
 {
-	string path = string(output_path + "\\model.txt");
+	string path = string(output_path + "\\model.stl");
 	ofstream ofs(path);
+
+	ofs << "solid model" << endl;
 
 	for (auto normal_idx = 0; normal_idx < normal_set.size(); normal_idx++)
 	{
-		for (auto vertices_idx = normal_idx * 4; vertices_idx < normal_idx * 4 + 4; vertices_idx++)
-		{
-			ofs << point_cloud[vertices_idx] << " ";
-		}
+		int start_idx = normal_idx * 4;
+		vector<Point3d> vertices = {
+			point_cloud[start_idx],
+			point_cloud[start_idx + 1],
+			point_cloud[start_idx + 2],
+			point_cloud[start_idx + 3]
+		};
 
-		ofs << "| " << "(" << normal_set[normal_idx].x << " " << normal_set[normal_idx].y << " " << normal_set[normal_idx].z << ")" << endl;
+		// first half of quad
+		ofs << "facet normal " << normal_set[normal_idx].x << " " << normal_set[normal_idx].y << " " << normal_set[normal_idx].z << endl;
+		ofs << "outer loop" << endl;
+
+		ofs << "vertex " << vertices[0].x << " " << vertices[0].y << " " << vertices[0].z << endl;
+		ofs << "vertex " << vertices[1].x << " " << vertices[1].y << " " << vertices[1].z << endl;
+		ofs << "vertex " << vertices[2].x << " " << vertices[2].y << " " << vertices[2].z << endl;
+
+		ofs << "endloop" << endl;
+		ofs << "endfacet" << endl;
+
+		// second half of quad
+		ofs << "facet normal " << normal_set[normal_idx].x << " " << normal_set[normal_idx].y << " " << normal_set[normal_idx].z << endl;
+		ofs << "outer loop" << endl;
+
+		ofs << "vertex " << vertices[2].x << " " << vertices[2].y << " " << vertices[2].z << endl;
+		ofs << "vertex " << vertices[3].x << " " << vertices[3].y << " " << vertices[3].z << endl;
+		ofs << "vertex " << vertices[0].x << " " << vertices[0].y << " " << vertices[0].z << endl;
+
+		ofs << "endloop" << endl;
+		ofs << "endfacet" << endl;
 	}
+
+	ofs << "endsolid model" << endl;
 
 	ofs.close();
 
@@ -176,7 +203,7 @@ void render_model(int argc, char** argv, Size window_size, function<void()> draw
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CW);
-	glClearColor(0, 0, 0, 0);
+	glClearColor(.4, .4, .4, 1);
 	glEnable(GL_CULL_FACE);
 
 	__init_perspective_view(window_size.width, window_size.height);
