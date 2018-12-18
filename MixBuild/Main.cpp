@@ -6,6 +6,7 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/prettywriter.h>
 #include <fstream>
+#include <opencv2/viz.hpp>
 #include "rc.h"
 #include "viewer.h"
 
@@ -42,33 +43,15 @@ int main(int argc, char* argv[])
 	Size image_size;
 	rc::NormalSet normal_set;
 	auto vertices_point_cloud = reconstruct_point_cloud(image_path, image_size, normal_set);
-	auto mapped_point_cloud = map_point_cloud_coordinate(vertices_point_cloud, image_size, __window_size);
+	//auto mapped_point_cloud = map_point_cloud_coordinate(vertices_point_cloud, image_size, __window_size);
 
-	string output_file_path = generate_output_file(mapped_point_cloud, normal_set, image_path);
-	generate_result_status(true, output_file_path, image_path);
+	viz::Viz3d window("Coordinate Frame");
+	viz::WCloud cloud_widget(vertices_point_cloud);
+	cloud_widget.setRenderingProperty(viz::POINT_SIZE, 2);
+	window.showWidget("plc", cloud_widget);
 
-	auto draw_callback = [&]()
-	{
-		glFrontFace(GL_CCW);
-		for (auto normal_idx = 0; normal_idx < normal_set.size(); normal_idx++)
-		{
-			glColor4d(.4, .6, .93, 1);
-			glBegin(GL_POLYGON);
-			glNormal3f(normal_set[normal_idx].x, normal_set[normal_idx].y, normal_set[normal_idx].z);
-
-			for (auto vertices_idx = normal_idx * 4; vertices_idx < normal_idx * 4 + 4; vertices_idx++)
-			{
-				auto point = mapped_point_cloud[vertices_idx];
-				glVertex3f(point.x, point.y, point.z);
-			}
-
-			glEnd();
-		}
-		glFrontFace(GL_CW);
-	};
-
-	render_model(argc, argv, __window_size, draw_callback);
-
+	window.spin();
+	
 	waitKey();
 
 	return 0;
@@ -92,9 +75,7 @@ rc::PointCloud reconstruct_point_cloud(const String image_path, Size& out_image_
 	int cube_size = 10;
 	rc::calculate_point_cloud(oth_proj, point_cloud, cube_size);
 
-	rc::find_surface_vertices(point_cloud, vertices_point_cloud, out_normal_set, cube_size, out_image_size);
-
-	return vertices_point_cloud;
+	return point_cloud;
 }
 
 // generate the output file
